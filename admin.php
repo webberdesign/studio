@@ -1,0 +1,627 @@
+<?php
+/*  PAGE NAME: admin.php
+    SECTION: Admin & Settings Panel
+------------------------------------------------------------*/
+require_once __DIR__ . '/config.php';
+
+// Determine which tab is selected
+$tab = $_GET['tab'] ?? 'videos';
+$validTabs = ['videos','songs','collections','settings'];
+if (!in_array($tab, $validTabs, true)) {
+    $tab = 'videos';
+}
+
+// Current settings for styling and feature flags
+$settings = tb_get_settings();
+$currentTheme = $settings['theme'];
+$showSpotify = !empty($settings['show_spotify']);
+$showApple   = !empty($settings['show_apple']);
+
+// Handle login
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
+    $u = trim($_POST['username'] ?? '');
+    $p = trim($_POST['password'] ?? '');
+
+    $stmt = $pdo->prepare("SELECT * FROM tb_admin_users WHERE username = ?");
+    $stmt->execute([$u]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($user && hash('sha256', $p) === $user['password_hash']) {
+        $_SESSION['tb_admin'] = $user['username'];
+        header('Location: admin.php');
+        exit;
+    }
+    $loginError = 'Invalid login';
+}
+
+// Handle logout
+if (isset($_GET['logout'])) {
+    unset($_SESSION['tb_admin']);
+    header('Location: admin.php');
+    exit;
+}
+
+// Helper to compute next position for a table
+function tb_next_position(PDO $pdo, string $table): int {
+    $stmt = $pdo->query("SELECT MAX(position) AS max_pos FROM {$table}");
+    $maxPos = $stmt->fetch(PDO::FETCH_ASSOC)['max_pos'];
+    return ($maxPos !== null) ? ((int)$maxPos + 1) : 0;
+}
+
+// Handle CRUD if logged in and not login form
+if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['login'])) {
+    // Update existing video (from inline edit on public page)
+    if (isset($_POST['update_video']) && !empty($_POST['id'])) {
+        $videoId = (int)($_POST['id']);
+        $title   = trim($_POST['title'] ?? '');
+        $url     = trim($_POST['youtube_url'] ?? '');
+        $released = isset($_POST['released']) ? 1 : 0;
+        if ($title && $url) {
+            $stmt = $pdo->prepare("UPDATE tb_videos SET title = ?, youtube_url = ?, is_released = ? WHERE id = ?");
+            $stmt->execute([$title, $url, $released, $videoId]);
+        }
+    }
+
+    // Update existing song (from inline edit on public page)
+    if (isset($_POST['update_song']) && !empty($_POST['id'])) {
+        $songId = (int)($_POST['id']);
+        $title  = trim($_POST['title'] ?? '');
+        $mp3    = trim($_POST['mp3_path'] ?? '');
+        // Determine initial cover path from hidden input
+        $cover  = trim($_POST['cover_path'] ?? '');
+        // Process uploaded cover if provided
+        if (!empty($_FILES['cover_upload']['tmp_name'])) {
+            $uploadDir  = 'uploads/';
+            // ensure uploads directory exists
+            if (!is_dir($uploadDir)) {
+                @mkdir($uploadDir, 0755, true);
+            }
+            $uploadPath = $uploadDir . time() . '_' . basename($_FILES['cover_upload']['name']);
+            if (move_uploaded_file($_FILES['cover_upload']['tmp_name'], $uploadPath)) {
+                $cover = $uploadPath;
+            }
+        }
+        $apple = trim($_POST['apple_music_url'] ?? '');
+        $spot  = trim($_POST['spotify_url'] ?? '');
+        $released = isset($_POST['released']) ? 1 : 0;
+        if ($title) {
+            // Build update statement; use parameter binding for nulls
+            $stmt = $pdo->prepare("UPDATE tb_songs SET title = ?, mp3_path = ?, cover_path = ?, apple_music_url = ?, spotify_url = ?, is_released = ? WHERE id = ?");
+            $stmt->execute([
+                $title,
+                ($mp3 !== '' ? $mp3 : null),
+                ($cover !== '' ? $cover : null),
+                ($apple !== '' ? $apple : null),
+                ($spot  !== '' ? $spot  : null),
+                $released,
+                $songId
+            ]);
+        }
+    }
+    // Add video
+    if (isset($_POST['add_video'])) {
+        $title = trim($_POST['title'] ?? '');
+        $url   = trim($_POST['youtube_url'] ?? '');
+        $released = isset($_POST['released']) ? 1 : 0;
+        if ($title && $url) {
+            $pos = tb_next_position($pdo, 'tb_videos');
+            $stmt = $pdo->prepare("INSERT INTO tb_videos (title, youtube_url, is_released, position) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$title, $url, $released, $pos]);
+        }
+    }
+    // Delete video
+    // When delete_video is set, its value holds the ID; use that instead of relying on separate 'id' field
+    if (isset($_POST['delete_video']) && !empty($_POST['delete_video'])) {
+        $videoIdToDelete = (int)$_POST['delete_video'];
+        $stmt = $pdo->prepare("DELETE FROM tb_videos WHERE id = ?");
+        $stmt->execute([$videoIdToDelete]);
+    }
+    // Save video order and release states
+    if (isset($_POST['save_order_videos']) && isset($_POST['order'])) {
+        $order = array_filter(explode(',', $_POST['order']), function($id) { return $id !== ''; });
+        $pos = 0;
+        $updatePos    = $pdo->prepare("UPDATE tb_videos SET position = ? WHERE id = ?");
+        $updateRelease = $pdo->prepare("UPDATE tb_videos SET is_released = ? WHERE id = ?");
+        foreach ($order as $id) {
+            $updatePos->execute([$pos++, $id]);
+            $isReleased = isset($_POST['released_state'][$id]) ? 1 : 0;
+            $updateRelease->execute([$isReleased, $id]);
+        }
+    }
+
+    // Add song
+    if (isset($_POST['add_song'])) {
+        $title = trim($_POST['title'] ?? '');
+        $mp3   = trim($_POST['mp3_path'] ?? '');
+        $cover = trim($_POST['cover_path'] ?? '');
+        $apple = trim($_POST['apple_music_url'] ?? '');
+        $spot  = trim($_POST['spotify_url'] ?? '');
+        $released = isset($_POST['released']) ? 1 : 0;
+        $collectionId = trim($_POST['collection_id'] ?? '');
+        if ($title) {
+            $pos = tb_next_position($pdo, 'tb_songs');
+            $stmt = $pdo->prepare("INSERT INTO tb_songs (title, mp3_path, cover_path, apple_music_url, spotify_url, is_released, position, collection_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $title,
+                $mp3 !== '' ? $mp3 : null,
+                $cover !== '' ? $cover : null,
+                $apple !== '' ? $apple : null,
+                $spot !== '' ? $spot : null,
+                $released,
+                $pos,
+                $collectionId !== '' ? (int)$collectionId : null
+            ]);
+        }
+    }
+    // Delete song
+    // When delete_song is set, its value holds the ID
+    if (isset($_POST['delete_song']) && !empty($_POST['delete_song'])) {
+        $songIdToDelete = (int)$_POST['delete_song'];
+        $stmt = $pdo->prepare("DELETE FROM tb_songs WHERE id = ?");
+        $stmt->execute([$songIdToDelete]);
+    }
+    // Save song order and release states
+    if (isset($_POST['save_order_songs']) && isset($_POST['order'])) {
+        $order = array_filter(explode(',', $_POST['order']), function($id) { return $id !== ''; });
+        $pos = 0;
+        $updatePos    = $pdo->prepare("UPDATE tb_songs SET position = ? WHERE id = ?");
+        $updateRelease = $pdo->prepare("UPDATE tb_songs SET is_released = ? WHERE id = ?");
+        foreach ($order as $id) {
+            $updatePos->execute([$pos++, $id]);
+            $isReleased = isset($_POST['released_state'][$id]) ? 1 : 0;
+            $updateRelease->execute([$isReleased, $id]);
+        }
+    }
+
+    // Add collection
+    if (isset($_POST['add_collection'])) {
+        $name = trim($_POST['name'] ?? '');
+        $cover = trim($_POST['cover_path'] ?? '');
+        if ($name) {
+            $stmt = $pdo->prepare("INSERT INTO tb_collections (name, cover_path) VALUES (?, ?)");
+            $stmt->execute([$name, $cover !== '' ? $cover : null]);
+        }
+    }
+    // Delete collection
+    if (isset($_POST['delete_collection']) && !empty($_POST['id'])) {
+        $stmt = $pdo->prepare("DELETE FROM tb_collections WHERE id = ?");
+        $stmt->execute([$_POST['id']]);
+        // Optionally set collection_id to null for songs in this collection
+        $pdo->prepare("UPDATE tb_songs SET collection_id = NULL WHERE collection_id = ?")->execute([$_POST['id']]);
+    }
+
+    // Update settings (theme and service visibility)
+    if (isset($_POST['update_theme'])) {
+        $newTheme = $_POST['theme'] ?? 'dark';
+        $showSpotifyFlag = isset($_POST['show_spotify']) ? 1 : 0;
+        $showAppleFlag   = isset($_POST['show_apple']) ? 1 : 0;
+        // Persist theme and service flags
+        tb_set_settings([
+            'theme'        => ($newTheme === 'light') ? 'light' : 'dark',
+            'show_spotify' => $showSpotifyFlag,
+            'show_apple'   => $showAppleFlag
+        ]);
+        // Refresh in-memory settings
+        $settings     = tb_get_settings();
+        $currentTheme = $settings['theme'];
+        $showSpotify  = !empty($settings['show_spotify']);
+        $showApple    = !empty($settings['show_apple']);
+    }
+
+    // Redirect back to avoid form resubmission
+    header('Location: admin.php?tab=' . urlencode($tab));
+    exit;
+}
+
+?>
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Titty Bingo Studio Settings</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="public/css/app.css">
+    <meta name="theme-color" content="<?php echo ($currentTheme === 'light') ? '#ffffff' : '#0f172a'; ?>">
+    <!-- Include SortableJS for drag-and-drop -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+</head>
+<body class="tb-body tb-body--admin <?php echo ($currentTheme === 'light') ? 'tb-theme-light' : ''; ?>">
+<div class="tb-admin-shell">
+    <header class="tb-admin-header">
+        <a href="index.php" class="tb-admin-back"><i class="fas fa-arrow-left"></i></a>
+        <h1>Titty Bingo Studio Admin</h1>
+        <?php if (tb_is_admin()): ?>
+            <a href="?logout=1" class="tb-admin-logout"><i class="fas fa-right-from-bracket"></i></a>
+        <?php endif; ?>
+    </header>
+
+    <?php if (!tb_is_admin()): ?>
+        <!-- Login Form -->
+        <main class="tb-admin-main">
+            <form method="post" class="tb-form-card">
+                <h2><i class="fas fa-user-gear"></i> Admin Login</h2>
+                <?php if (!empty($loginError)): ?>
+                    <p class="tb-error"><?php echo htmlspecialchars($loginError); ?></p>
+                <?php endif; ?>
+                <label>Username
+                    <input type="text" name="username" required>
+                </label>
+                <label>Password
+                    <input type="password" name="password" required>
+                </label>
+                <button type="submit" name="login" class="tb-btn-primary">Log In</button>
+            </form>
+        </main>
+    <?php else: ?>
+        <main class="tb-admin-main">
+            <div class="tb-toggle-pill tb-admin-tabs">
+                <a href="?tab=videos" class="<?php echo ($tab === 'videos') ? 'active' : ''; ?>">Videos</a>
+                <a href="?tab=songs" class="<?php echo ($tab === 'songs') ? 'active' : ''; ?>">Music</a>
+                <a href="?tab=collections" class="<?php echo ($tab === 'collections') ? 'active' : ''; ?>">Collections</a>
+                <a href="?tab=settings" class="<?php echo ($tab === 'settings') ? 'active' : ''; ?>">Settings</a>
+            </div>
+
+            <?php if ($tab === 'videos'): ?>
+                <?php
+                $videos = $pdo->query("SELECT * FROM tb_videos ORDER BY position ASC, created_at DESC")
+                                  ->fetchAll(PDO::FETCH_ASSOC);
+                ?>
+                <section class="tb-admin-section">
+                    <h2>Videos</h2>
+                    <!-- Add / Edit video form -->
+                    <form id="videoForm" method="post" class="tb-form-inline">
+                        <input type="hidden" name="tab" value="videos">
+                        <!-- hidden id for editing mode -->
+                        <input type="hidden" name="id" id="videoEditIdHidden" value="">
+                        <label>Title
+                            <input type="text" name="title" required>
+                        </label>
+                        <label>YouTube URL
+                            <input type="url" name="youtube_url" required>
+                        </label>
+                        <label class="tb-form-checkbox">Released?
+                            <input type="checkbox" name="released" value="1">
+                        </label>
+                        <button type="submit" name="add_video" id="videoAddBtn" class="tb-btn-primary">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                        <button type="submit" name="update_video" id="videoUpdateBtn" class="tb-btn-primary" style="display:none;">
+                            Update
+                        </button>
+                        <button type="button" id="videoCancelEdit" class="tb-btn-secondary" style="display:none;">
+                            Cancel
+                        </button>
+                    </form>
+
+                    <!-- Reorder and toggle release state.  Delete buttons use formaction so they don’t interfere with this form. -->
+                    <form id="videoReorderForm" method="post">
+                        <input type="hidden" name="tab" value="videos">
+                        <input type="hidden" name="order" id="videoOrderInput" value="">
+                        <ul class="tb-admin-list" id="videoList">
+                            <?php foreach ($videos as $v): ?>
+                                <li data-id="<?php echo $v['id']; ?>"
+                                    data-title="<?php echo htmlspecialchars($v['title'], ENT_QUOTES); ?>"
+                                    data-url="<?php echo htmlspecialchars($v['youtube_url'], ENT_QUOTES); ?>"
+                                    data-released="<?php echo $v['is_released']; ?>">
+                                    <span class="tb-handle"><i class="fas fa-bars"></i></span>
+                                    <a href="#" class="tb-item-title tb-edit-item" data-id="<?php echo $v['id']; ?>" title="Edit">
+                                        <?php echo htmlspecialchars($v['title']); ?>
+                                    </a>
+                                    <label class="tb-form-checkbox" style="margin-left:auto; margin-right:0.5rem;">
+                                        Released
+                                        <input type="checkbox" name="released_state[<?php echo $v['id']; ?>]" value="1" <?php echo ($v['is_released'] ? 'checked' : ''); ?>>
+                                    </label>
+                                    <button type="submit" name="delete_video" value="<?php echo $v['id']; ?>" formaction="admin.php?tab=videos" formmethod="post" class="tb-inline-delete-btn"><i class="fas fa-trash"></i></button>
+                                </li>
+                            <?php endforeach; ?>
+                            <?php if (empty($videos)): ?>
+                                <li class="tb-empty">No videos yet.</li>
+                            <?php endif; ?>
+                        </ul>
+                        <?php if (!empty($videos)): ?>
+                        <button type="submit" name="save_order_videos" class="tb-btn-primary" style="margin-top:0.75rem;">Save Order</button>
+                        <?php endif; ?>
+                    </form>
+                </section>
+            <?php elseif ($tab === 'songs'): ?>
+                <?php
+                $songs = $pdo->query("SELECT * FROM tb_songs ORDER BY position ASC, created_at DESC")
+                                  ->fetchAll(PDO::FETCH_ASSOC);
+                // fetch collections for dropdown
+                $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+                ?>
+                <section class="tb-admin-section">
+                    <h2>Music</h2>
+                    <!-- Add / Edit song form -->
+                    <form id="songForm" method="post" enctype="multipart/form-data" class="tb-form-inline">
+                        <input type="hidden" name="tab" value="songs">
+                        <!-- hidden id for editing mode -->
+                        <input type="hidden" name="id" id="songEditIdHidden" value="">
+                        <!-- preserve existing cover path when editing -->
+                        <input type="hidden" name="cover_path" id="songEditCoverPathHidden" value="">
+                        <label>Title
+                            <input type="text" name="title" required>
+                        </label>
+                        <label>MP3 Path / URL (optional)
+                            <input type="text" name="mp3_path">
+                        </label>
+                        <label>Cover Image (optional)
+                            <input type="file" name="cover_upload" accept="image/*">
+                        </label>
+                        <label>Apple Music URL (optional)
+                            <input type="text" name="apple_music_url">
+                        </label>
+                        <label>Spotify URL (optional)
+                            <input type="text" name="spotify_url">
+                        </label>
+                        <label>Collection
+                            <select name="collection_id" id="songFormCollectionSelect">
+                                <option value="">None</option>
+                                <?php foreach ($collections as $c): ?>
+                                    <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['name']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label class="tb-form-checkbox">Released?
+                            <input type="checkbox" name="released" value="1">
+                        </label>
+                        <button type="submit" name="add_song" id="songAddBtn" class="tb-btn-primary">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                        <button type="submit" name="update_song" id="songUpdateBtn" class="tb-btn-primary" style="display:none;">
+                            Update
+                        </button>
+                        <button type="button" id="songCancelEdit" class="tb-btn-secondary" style="display:none;">
+                            Cancel
+                        </button>
+                    </form>
+
+                    <!-- Reorder and toggle release state for songs -->
+                    <form id="songReorderForm" method="post">
+                        <input type="hidden" name="tab" value="songs">
+                        <input type="hidden" name="order" id="songOrderInput" value="">
+                        <ul class="tb-admin-list" id="songList">
+                            <?php foreach ($songs as $s): ?>
+                                <li data-id="<?php echo $s['id']; ?>"
+                                    data-title="<?php echo htmlspecialchars($s['title'], ENT_QUOTES); ?>"
+                                    data-mp3="<?php echo htmlspecialchars($s['mp3_path'] ?? '', ENT_QUOTES); ?>"
+                                    data-apple="<?php echo htmlspecialchars($s['apple_music_url'] ?? '', ENT_QUOTES); ?>"
+                                    data-spotify="<?php echo htmlspecialchars($s['spotify_url'] ?? '', ENT_QUOTES); ?>"
+                                    data-released="<?php echo $s['is_released']; ?>"
+                                    data-collection="<?php echo htmlspecialchars($s['collection_id'] ?? '', ENT_QUOTES); ?>"
+                                    data-cover="<?php echo htmlspecialchars($s['cover_path'] ?? '', ENT_QUOTES); ?>">
+                                    <span class="tb-handle"><i class="fas fa-bars"></i></span>
+                                    <a href="#" class="tb-item-title tb-edit-item" data-id="<?php echo $s['id']; ?>" title="Edit">
+                                        <?php echo htmlspecialchars($s['title']); ?>
+                                    </a>
+                                    <label class="tb-form-checkbox" style="margin-left:auto; margin-right:0.5rem;">
+                                        Released
+                                        <input type="checkbox" name="released_state[<?php echo $s['id']; ?>]" value="1" <?php echo ($s['is_released'] ? 'checked' : ''); ?>>
+                                    </label>
+                                    <button type="submit" name="delete_song" value="<?php echo $s['id']; ?>" formaction="admin.php?tab=songs" formmethod="post" class="tb-inline-delete-btn"><i class="fas fa-trash"></i></button>
+                                </li>
+                            <?php endforeach; ?>
+                            <?php if (empty($songs)): ?>
+                                <li class="tb-empty">No music yet.</li>
+                            <?php endif; ?>
+                        </ul>
+                        <?php if (!empty($songs)): ?>
+                        <button type="submit" name="save_order_songs" class="tb-btn-primary" style="margin-top:0.75rem;">Save Order</button>
+                        <?php endif; ?>
+                    </form>
+                </section>
+            <?php elseif ($tab === 'collections'): ?>
+                <?php
+                $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
+                                   ->fetchAll(PDO::FETCH_ASSOC);
+                ?>
+                <section class="tb-admin-section">
+                    <h2>Collections</h2>
+                    <form method="post" class="tb-form-inline">
+                        <input type="hidden" name="tab" value="collections">
+                        <label>Name
+                            <input type="text" name="name" required>
+                        </label>
+                        <label>Cover Image (optional)
+                            <input type="text" name="cover_path">
+                        </label>
+                        <button type="submit" name="add_collection" class="tb-btn-primary">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                    </form>
+                    <ul class="tb-admin-list">
+                        <?php foreach ($collections as $c): ?>
+                            <li>
+                                <span><?php echo htmlspecialchars($c['name']); ?></span>
+                                <form method="post" class="tb-inline-delete">
+                                    <input type="hidden" name="id" value="<?php echo $c['id']; ?>">
+                                    <input type="hidden" name="tab" value="collections">
+                                    <button type="submit" name="delete_collection"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </li>
+                        <?php endforeach; ?>
+                        <?php if (empty($collections)): ?>
+                            <li class="tb-empty">No collections yet.</li>
+                        <?php endif; ?>
+                    </ul>
+                </section>
+            <?php elseif ($tab === 'settings'): ?>
+                <section class="tb-admin-section">
+                    <h2>Settings</h2>
+                    <form method="post" class="tb-form-inline">
+                        <input type="hidden" name="tab" value="settings">
+                        <label>Select Theme
+                            <select name="theme">
+                                <option value="dark" <?php echo ($currentTheme === 'dark') ? 'selected' : ''; ?>>Dark</option>
+                                <option value="light" <?php echo ($currentTheme === 'light') ? 'selected' : ''; ?>>Light</option>
+                            </select>
+                        </label>
+                        <label class="tb-form-checkbox">
+                            <input type="checkbox" name="show_spotify" value="1" <?php echo ($showSpotify) ? 'checked' : ''; ?>>
+                            Show Spotify Buttons
+                        </label>
+                        <label class="tb-form-checkbox">
+                            <input type="checkbox" name="show_apple" value="1" <?php echo ($showApple) ? 'checked' : ''; ?>>
+                            Show Apple Music Buttons
+                        </label>
+                        <button type="submit" name="update_theme" class="tb-btn-primary">
+                            Save Settings
+                        </button>
+                    </form>
+                </section>
+            <?php endif; ?>
+        </main>
+    <?php endif; ?>
+</div>
+<script>
+// Initialize Sortable for videos and songs if lists exist
+window.addEventListener('load', function() {
+  if (typeof Sortable !== 'undefined') {
+    const videoList = document.getElementById('videoList');
+    if (videoList) {
+      new Sortable(videoList, {
+        animation: 150,
+        handle: '.tb-handle',
+        onSort: function () {
+          const ids = Array.from(videoList.querySelectorAll('li[data-id]')).map(li => li.getAttribute('data-id'));
+          const orderInput = document.getElementById('videoOrderInput');
+          if (orderInput) orderInput.value = ids.join(',');
+        }
+      });
+      const idsInit = Array.from(videoList.querySelectorAll('li[data-id]')).map(li => li.getAttribute('data-id'));
+      const orderInputInit = document.getElementById('videoOrderInput');
+      if (orderInputInit) orderInputInit.value = idsInit.join(',');
+    }
+    const songList = document.getElementById('songList');
+    if (songList) {
+      new Sortable(songList, {
+        animation: 150,
+        handle: '.tb-handle',
+        onSort: function () {
+          const ids = Array.from(songList.querySelectorAll('li[data-id]')).map(li => li.getAttribute('data-id'));
+          const orderInput = document.getElementById('songOrderInput');
+          if (orderInput) orderInput.value = ids.join(',');
+        }
+      });
+      const idsInit2 = Array.from(songList.querySelectorAll('li[data-id]')).map(li => li.getAttribute('data-id'));
+      const orderInputInit2 = document.getElementById('songOrderInput');
+      if (orderInputInit2) orderInputInit2.value = idsInit2.join(',');
+    }
+  }
+});
+
+  // Inline edit via top forms for videos
+  (function() {
+    const videoForm     = document.getElementById('videoForm');
+    if (!videoForm) return;
+    const idInput       = document.getElementById('videoEditIdHidden');
+    const titleInput    = videoForm.querySelector('input[name="title"]');
+    const urlInput      = videoForm.querySelector('input[name="youtube_url"]');
+    const releaseChk    = videoForm.querySelector('input[name="released"]');
+    const addBtn        = document.getElementById('videoAddBtn');
+    const updateBtn     = document.getElementById('videoUpdateBtn');
+    const cancelBtn     = document.getElementById('videoCancelEdit');
+    // attach click listeners on edit links
+    document.querySelectorAll('#videoList .tb-edit-item').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const li = link.closest('li');
+        if (!li) return;
+        // populate form
+        idInput.value    = li.getAttribute('data-id') || '';
+        titleInput.value = li.getAttribute('data-title') || '';
+        urlInput.value   = li.getAttribute('data-url') || '';
+        releaseChk.checked = (li.getAttribute('data-released') === '1');
+        // toggle buttons
+        addBtn.style.display    = 'none';
+        updateBtn.style.display = '';
+        cancelBtn.style.display = '';
+        // scroll into view
+        videoForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    });
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        // reset form
+        idInput.value    = '';
+        titleInput.value = '';
+        urlInput.value   = '';
+        releaseChk.checked = false;
+        addBtn.style.display    = '';
+        updateBtn.style.display = 'none';
+        cancelBtn.style.display = 'none';
+      });
+    }
+  })();
+
+  // Inline edit via top form for songs
+  (function() {
+    const songForm    = document.getElementById('songForm');
+    if (!songForm) return;
+    const idInput     = document.getElementById('songEditIdHidden');
+    const coverPathHidden = document.getElementById('songEditCoverPathHidden');
+    const titleInput  = songForm.querySelector('input[name="title"]');
+    const mp3Input    = songForm.querySelector('input[name="mp3_path"]');
+    const coverInput  = songForm.querySelector('input[name="cover_upload"]');
+    const appleInput  = songForm.querySelector('input[name="apple_music_url"]');
+    const spotifyInput= songForm.querySelector('input[name="spotify_url"]');
+    const releasedChk = songForm.querySelector('input[name="released"]');
+    const collectionSelect = document.getElementById('songFormCollectionSelect');
+    const addBtn    = document.getElementById('songAddBtn');
+    const updateBtn = document.getElementById('songUpdateBtn');
+    const cancelBtn = document.getElementById('songCancelEdit');
+    // attach click listeners on song titles
+    document.querySelectorAll('#songList .tb-edit-item').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const li = link.closest('li');
+        if (!li) return;
+        // populate fields
+        idInput.value    = li.getAttribute('data-id') || '';
+        coverPathHidden.value = li.getAttribute('data-cover') || '';
+        titleInput.value = li.getAttribute('data-title') || '';
+        mp3Input.value   = li.getAttribute('data-mp3') || '';
+        appleInput.value = li.getAttribute('data-apple') || '';
+        spotifyInput.value = li.getAttribute('data-spotify') || '';
+        releasedChk.checked = (li.getAttribute('data-released') === '1');
+        // set collection select
+        const collectionVal = li.getAttribute('data-collection');
+        if (collectionSelect) {
+          for (let i=0; i<collectionSelect.options.length; i++) {
+            const opt = collectionSelect.options[i];
+            opt.selected = (opt.value === collectionVal);
+          }
+        }
+        // hide add, show update/cancel
+        addBtn.style.display    = 'none';
+        updateBtn.style.display = '';
+        cancelBtn.style.display = '';
+        // scroll into view
+        songForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    });
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        // reset form fields
+        idInput.value    = '';
+        coverPathHidden.value = '';
+        titleInput.value = '';
+        mp3Input.value   = '';
+        // do not clear file input (coverInput) because cannot set value; just let user choose; but we can clear if editing cancelled
+        coverInput.value  = '';
+        appleInput.value = '';
+        spotifyInput.value = '';
+        releasedChk.checked = false;
+        // reset collection select to none
+        if (collectionSelect) collectionSelect.selectedIndex = 0;
+        // show add, hide update/cancel
+        addBtn.style.display    = '';
+        updateBtn.style.display = 'none';
+        cancelBtn.style.display = 'none';
+      });
+    }
+  })();
+</script>
+</body>
+</html>

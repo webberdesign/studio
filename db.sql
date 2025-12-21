@@ -1,0 +1,45 @@
+/* PAGE NAME: db.sql
+   SECTION: Schema
+-----------------------------------------*/
+
+CREATE TABLE tb_admin_users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL
+);
+
+INSERT INTO tb_admin_users (username, password_hash)
+VALUES ('tbadmin', SHA2('changeme123', 256));
+
+CREATE TABLE tb_videos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  youtube_url VARCHAR(255) NOT NULL,
+  is_released TINYINT(1) DEFAULT 0,
+  position INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE tb_songs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  mp3_path VARCHAR(255) DEFAULT NULL,
+  cover_path VARCHAR(255) DEFAULT NULL,
+  apple_music_url VARCHAR(255) DEFAULT NULL,
+  spotify_url VARCHAR(255) DEFAULT NULL,
+  is_released TINYINT(1) DEFAULT 0,
+  position INT DEFAULT 0,
+  collection_id INT DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+/*
+ * Collections table to group songs into albums/collections.
+ * Each collection has a title and optional cover art.
+ */
+CREATE TABLE tb_collections (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  cover_path VARCHAR(255) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -1,0 +1,1254 @@
+/*  PAGE NAME: public/css/app.css
+    SECTION: Core Styles
+------------------------------------------------------------*/
+
+:root {
+  /* Dark theme defaults */
+  --tb-bg: #020617;
+  --tb-bg-elevated: #020617;
+  --tb-card: #020617;
+  --tb-highlight: #f97316;
+  --tb-accent: #22c55e;
+  --tb-accent-soft: rgba(250, 204, 21, 0.15);
+  --tb-text: #e5e7eb;
+  --tb-muted: #6b7280;
+  --tb-border: rgba(148, 163, 184, 0.35);
+  --tb-radius-xl: 1.5rem;
+  --tb-radius-lg: 1rem;
+  --tb-shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.8);
+  --tb-body-bg: radial-gradient(circle at top, #1f2937 0, #020617 45%, #000 100%);
+}
+
+/* Light theme overrides */
+.tb-theme-light {
+  --tb-bg: #f8fafc;
+  --tb-bg-elevated: #ffffff;
+  --tb-card: #ffffff;
+  --tb-highlight: #2563eb;
+  --tb-accent: #16a34a;
+  --tb-accent-soft: rgba(34, 197, 94, 0.1);
+  --tb-text: #1e293b;
+  --tb-muted: #64748b;
+  --tb-border: rgba(100, 116, 139, 0.25);
+  --tb-body-bg: #f8fafc;
+  --tb-shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.05);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body.tb-body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  color: var(--tb-text);
+  background: var(--tb-body-bg);
+}
+
+/*  SECTION: App Shell  */
+
+.tb-app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 90px; /* bottom nav */
+}
+
+.tb-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--tb-bg-elevated);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--tb-border);
+}
+
+.tb-menu-btn {
+  border: none;
+  /* Use elevated background for both themes */
+  background: var(--tb-bg-elevated);
+  color: var(--tb-text);
+  border-radius: 999px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  /* Removed heavy shadow from the menu button */
+  box-shadow: none;
+}
+
+.tb-menu-btn i {
+  font-size: 1.1rem;
+}
+
+.tb-logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tb-logo {
+  height: 32px;
+  width: auto;
+  /* Remove drop shadow from the logo so it sits flush */
+  filter: none;
+}
+
+.tb-logo-tag {
+  font-size: 0.75rem;
+  letter-spacing: 0.19em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,0.4);
+  color: var(--tb-accent);
+  background: radial-gradient(circle at top, rgba(22, 163, 74, .25) 0, transparent 60%);
+}
+
+.tb-header-spacer {
+  flex: 1;
+}
+
+/*  SECTION: Side Nav  */
+
+.tb-sidenav {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 260px;
+  max-width: 80vw;
+  background: var(--tb-bg-elevated);
+  box-shadow: var(--tb-shadow-soft);
+  transform: translateX(-100%);
+  transition: transform 0.25s ease-out;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+}
+
+.tb-sidenav.open {
+  transform: translateX(0);
+}
+
+.tb-sidenav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--tb-border);
+}
+
+.tb-sidenav-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: .18em;
+}
+
+.tb-close-btn {
+  border: none;
+  background: transparent;
+  color: var(--tb-text);
+  font-size: 1.1rem;
+}
+
+.tb-sidenav-links {
+  padding: 0.75rem 0.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tb-sidenav-links a {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  text-decoration: none;
+  color: var(--tb-muted);
+  font-size: 0.9rem;
+}
+
+.tb-sidenav-links a i {
+  width: 18px;
+  text-align: center;
+}
+
+.tb-sidenav-links a.active,
+.tb-sidenav-links a:hover {
+  background: rgba(15, 118, 110, 0.32);
+  color: var(--tb-text);
+}
+
+/*  SECTION: Main Content  */
+
+.tb-main {
+  flex: 1;
+  padding: 1.25rem 1rem 1.5rem;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.tb-section {
+  background: var(--tb-bg-elevated);
+  padding: 1.25rem;
+  border-radius: var(--tb-radius-xl);
+  box-shadow: var(--tb-shadow-soft);
+  border: 1px solid var(--tb-border);
+}
+
+.tb-title {
+  font-size: 1.35rem;
+  margin: 0 0 0.25rem;
+}
+
+.tb-subtitle {
+  margin: 0 0 1rem;
+  color: var(--tb-muted);
+  font-size: 0.9rem;
+}
+
+/*  SECTION: Cards / Grids  */
+
+.tb-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px,1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .tb-card-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.tb-card {
+  background: var(--tb-card);
+  border-radius: var(--tb-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--tb-border);
+  box-shadow: var(--tb-shadow-soft);
+  display: flex;
+  flex-direction: column;
+}
+
+.tb-card-thumb {
+  width: 100%;
+  display: block;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+}
+
+.tb-card-body {
+  padding: 0.75rem 0.9rem 0.9rem;
+}
+
+.tb-card-title {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.tb-card-link {
+  margin-top: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(248, 113, 113, 0.75);
+  text-decoration: none;
+  font-size: 0.8rem;
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.65);
+}
+
+.tb-card-link i {
+  color: #f97373;
+}
+
+/*  SECTION: Songs List  */
+
+.tb-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tb-song-card {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem;
+  border-radius: var(--tb-radius-lg);
+  border: 1px solid var(--tb-border);
+  background: var(--tb-card);
+}
+
+.tb-song-media {
+  /* Provide a fixed square area for album art; it will shrink on
+     smaller screens but maintain a consistent aspect ratio. */
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Album covers now use the full area of the media container while
+   maintaining their aspect ratio. If the image is not square it will
+   be contained without cropping. We also minimize corner rounding and
+   remove heavy shadows. */
+.tb-song-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.tb-song-cover--placeholder {
+  display: grid;
+  place-items: center;
+  border: 1px dashed rgba(148,163,184,0.6);
+}
+
+.tb-song-cover--placeholder i {
+  color: var(--tb-muted);
+  font-size: 1.4rem;
+}
+
+/* Increase the size of the song titles to stand out next to smaller
+   album art. Only applies inside song cards. */
+.tb-song-card .tb-card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/*  SECTION: Spotify Analytics Styles */
+/* Container boxes for Spotify stats */
+.tb-spotify-box {
+  background: var(--tb-bg-elevated);
+  border-radius: var(--tb-radius-lg);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--tb-border);
+  box-shadow: var(--tb-shadow-soft);
+}
+
+/* Simple table styling */
+.tb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.tb-table th,
+.tb-table td {
+  padding: 0.5rem 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid var(--tb-border);
+}
+.tb-table th {
+  color: var(--tb-text);
+  font-weight: 600;
+}
+.tb-table tbody tr:nth-child(odd) {
+  background: var(--tb-accent-soft);
+}
+
+/* The song body aligns its contents vertically so that the title and
+   play/link buttons sit centered relative to the album art.  On
+   narrow screens the elements will wrap if necessary. */
+.tb-song-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.tb-audio {
+  width: 100%;
+}
+
+.tb-empty {
+  margin-top: 0.5rem;
+  color: var(--tb-muted);
+  font-size: 0.9rem;
+}
+
+/*  SECTION: Bottom Mobile Nav  */
+
+.tb-bottom-nav {
+  position: fixed;
+  inset: auto 0 0 0;
+  height: 90px;
+  background: var(--tb-bg-elevated);
+  border-top: 1px solid var(--tb-border);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 30;
+  backdrop-filter: blur(12px);
+}
+
+.tb-bottom-item {
+  flex: 1;
+  text-align: center;
+  text-decoration: none;
+  color: var(--tb-muted);
+  font-size: 0.7rem;
+}
+
+.tb-bottom-item i {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 0.1rem;
+}
+
+.tb-bottom-item.active {
+  color: #f97316;
+}
+
+/*  SECTION: Analytics  */
+
+.tb-toggle-pill {
+  display: inline-flex;
+  padding: 0.2rem;
+  border-radius: 999px;
+  background: var(--tb-bg-elevated);
+  border: 1px solid rgba(148,163,184,0.4);
+  margin-bottom: 0.9rem;
+}
+
+.tb-toggle-pill button,
+.tb-toggle-pill a {
+  border: none;
+  background: transparent;
+  color: var(--tb-muted);
+  font-size: 0.8rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.tb-toggle-pill button.active,
+.tb-toggle-pill a.active {
+  background: linear-gradient(135deg, #f97316, #22c55e);
+  color: #020617;
+}
+
+.tb-analytics-pane {
+  display: none;
+}
+
+.tb-analytics-pane.active {
+  display: block;
+}
+
+.tb-analytics-placeholder {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--tb-muted);
+}
+
+/* Links on the analytics landing page */
+.tb-analytics-links {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.tb-analytics-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-card);
+  border: 1px solid var(--tb-border);
+  box-shadow: var(--tb-shadow-soft);
+  text-decoration: none;
+  color: var(--tb-text);
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.tb-analytics-link i {
+  font-size: 2rem;
+  color: var(--tb-highlight);
+}
+
+.tb-analytics-link:hover {
+  background: var(--tb-bg-elevated);
+}
+
+.tb-analytics-placeholder i {
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+  color: #22c55e;
+}
+
+/* video gallery from original snippet */
+
+.video-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.9rem;
+}
+
+/* Expand video grid to 4 columns on large screens */
+@media (min-width: 1024px) {
+  .video-gallery {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* YouTube analytics video cards use theme variables instead of hardcoded
+   colors so they adapt to both dark and light modes. */
+.video {
+  background: var(--tb-card);
+  border-radius: 1rem;
+  box-shadow: var(--tb-shadow-soft);
+  overflow: hidden;
+  text-align: center;
+  border: 1px solid var(--tb-border);
+}
+
+.video a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Thumbnails for analytics video cards; ensure the border uses the
+   theme border color in both light and dark mode. */
+.video img {
+  width: 100%;
+  height: auto;
+  border-bottom: 1px solid var(--tb-border);
+}
+
+/* Video title inside analytics cards; use the theme text colour so
+   text remains readable on light backgrounds. */
+.video h2 {
+  font-size: 0.85rem;
+  padding: 0.5rem 0.6rem 0.7rem;
+  color: var(--tb-text);
+}
+
+/*
+ * YouTube analytics header and lists should adapt to the current
+ * theme.  Without these overrides the default colours from the
+ * embedded YouTube thumbnails or the browser may render dark text
+ * on a light background.  Use theme variables for both dark and
+ * light modes.
+ */
+.tb-yt-header h2,
+.tb-yt-header h3,
+.tb-yt-header p {
+  color: var(--tb-text);
+}
+.tb-yt-header li {
+  color: var(--tb-text);
+}
+.tb-analytics-box {
+  background: var(--tb-card);
+  border: 1px solid var(--tb-border);
+  border-radius: var(--tb-radius-lg);
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 1rem;
+}
+.tb-top-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--tb-text);
+}
+.tb-top-list li {
+  margin-bottom: 0.3rem;
+}
+
+/*  SECTION: Admin Styles  */
+
+.tb-body--admin {
+  background: radial-gradient(circle at top, #1f2937 0, #020617 55%, #000 100%);
+}
+
+.tb-admin-shell {
+  max-width: 900px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.tb-admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid rgba(15,23,42,0.9);
+  background: var(--tb-bg-elevated);
+}
+
+.tb-admin-header h1 {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: .16em;
+}
+
+.tb-admin-back,
+.tb-admin-logout {
+  color: var(--tb-muted);
+  text-decoration: none;
+  font-size: 1.1rem;
+}
+
+.tb-admin-main {
+  padding: 1.25rem 1rem 1.5rem;
+  flex: 1;
+}
+
+.tb-form-card {
+  max-width: 380px;
+  margin: 2rem auto;
+  background: var(--tb-bg-elevated);
+  border-radius: var(--tb-radius-xl);
+  padding: 1.25rem 1.25rem 1.4rem;
+  box-shadow: var(--tb-shadow-soft);
+  border: 1px solid var(--tb-border);
+}
+
+.tb-form-card h2 {
+  margin: 0 0 0.75rem;
+}
+
+.tb-form-card label {
+  display: block;
+  font-size: 0.8rem;
+  margin-bottom: 0.6rem;
+}
+
+.tb-form-card input {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--tb-border);
+  background: var(--tb-bg-elevated);
+  color: var(--tb-text);
+}
+
+.tb-btn-primary {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #f97316, #22c55e);
+  color: #020617;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tb-error {
+  background: rgba(127,29,29,0.8);
+  border-radius: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.6rem;
+}
+
+.tb-admin-tabs {
+  margin-bottom: 1rem;
+}
+
+.tb-admin-section {
+  background: var(--tb-bg-elevated);
+  border-radius: var(--tb-radius-xl);
+  padding: 1rem;
+  border: 1px solid var(--tb-border);
+  box-shadow: var(--tb-shadow-soft);
+}
+
+.tb-admin-section h2 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+}
+
+.tb-form-inline {
+  display: grid;
+  grid-template-columns: minmax(0,1fr);
+  gap: 0.4rem;
+  margin-bottom: 0.9rem;
+}
+
+.tb-form-inline label {
+  font-size: 0.75rem;
+}
+
+.tb-form-inline input {
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  border-radius: 0.55rem;
+  border: 1px solid var(--tb-border);
+  background: var(--tb-bg-elevated);
+  color: var(--tb-text);
+}
+
+.tb-admin-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tb-admin-list li {
+  display: flex;
+  align-items: center;
+  padding: 0.45rem 0.3rem;
+  border-bottom: 1px solid rgba(15,23,42,0.9);
+  font-size: 0.85rem;
+}
+
+/* Drag handle for sortable lists */
+.tb-handle {
+  cursor: move;
+  margin-right: 0.5rem;
+  color: var(--tb-muted);
+}
+
+/* Title area grows to fill space */
+.tb-item-title {
+  flex: 1;
+}
+
+/* Delete button in admin lists */
+.tb-inline-delete-btn {
+  border: none;
+  background: transparent;
+  color: #fca5a5;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.tb-inline-delete {
+  margin: 0;
+}
+
+.tb-inline-delete button {
+  border: none;
+  background: transparent;
+  color: #fca5a5;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+/* Edit button in admin list */
+.tb-edit-item {
+  border: none;
+  background: transparent;
+  color: var(--tb-accent);
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-left: 0;
+  padding: 0;
+  text-decoration: none;
+}
+.tb-edit-item i {
+  pointer-events: none;
+}
+
+/* When .tb-edit-item is used as a link, ensure it has no underline and appears clickable */
+.tb-edit-item:hover {
+  text-decoration: underline;
+}
+
+/*
+ * Editing panel styles for admin edit forms
+ */
+.tb-edit-container {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--tb-border);
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-bg);
+  box-shadow: var(--tb-shadow-soft);
+}
+
+.tb-edit-container h3 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+}
+
+.tb-edit-container form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.7rem;
+}
+
+.tb-edit-container input[type="text"],
+.tb-edit-container input[type="url"],
+.tb-edit-container input[type="file"],
+.tb-edit-container select {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--tb-border);
+  background: var(--tb-bg-elevated);
+  color: var(--tb-text);
+  font-size: 0.85rem;
+}
+
+.tb-edit-container .tb-form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tb-edit-container .tb-btn-primary,
+.tb-edit-container .tb-btn-secondary {
+  width: auto;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+.tb-btn-secondary {
+  background: var(--tb-bg-elevated);
+  border: 1px solid var(--tb-border);
+  color: var(--tb-text);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.tb-btn-secondary:hover {
+  background: rgba(148,163,184,0.15);
+}
+
+/*
+ * Modal backdrop and container used for editing videos and songs in admin
+ */
+.tb-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+}
+
+.tb-modal {
+  background: var(--tb-bg-elevated);
+  border-radius: var(--tb-radius-xl);
+  padding: 1.2rem;
+  max-width: 90vw;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--tb-shadow-soft);
+}
+
+.tb-modal h3 {
+  margin-top: 0;
+  margin-bottom: 0.8rem;
+  font-size: 1.2rem;
+}
+
+.tb-modal form {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.tb-modal-close {
+  margin-top: 0.6rem;
+  display: inline-block;
+}
+
+@media (min-width: 640px) {
+  .tb-form-inline {
+    grid-template-columns: repeat(3, minmax(0,1fr)) auto;
+    align-items: end;
+  }
+}
+
+/*  SECTION: Responsive  */
+
+@media (min-width: 768px) {
+  .tb-main {
+    padding-inline: 1.5rem;
+  }
+}
+
+/*
+ * Override the default layout for card containers used in detailed analytics pages
+ * and other sections where a grid of boxes is displayed.  On wide screens
+ * (≥1024px), show up to 4 cards per row.  On smaller screens, use
+ * auto‑fitting columns with a minimum width.
+ */
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .cards-container {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/*  SECTION: Videos Toggle and Modal  */
+
+.tb-videos-pane {
+  /* By default hide the pane; grid layout will be applied on active state */
+  display: none;
+}
+
+/* When a videos pane is active, display it as a responsive grid.  On
+   smaller screens the grid will automatically reduce the number of
+   columns and on wider screens (>=1024px) it will show up to four
+   videos per row. */
+.tb-videos-pane.active {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .tb-videos-pane.active {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.tb-video-card {
+  position: relative;
+  background: var(--tb-card);
+  border-radius: var(--tb-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--tb-border);
+  box-shadow: var(--tb-shadow-soft);
+  display: flex;
+  flex-direction: column;
+}
+
+.tb-video-card .tb-play-overlay {
+  position: absolute;
+  inset: 0;
+  border: none;
+  /* Dark overlay across the entire video card */
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  /* Remove default font-size to allow custom icon sizing */
+  font-size: 0;
+}
+
+.tb-video-card:hover .tb-play-overlay {
+  background: transparent;
+}
+
+/* Style the play icon inside the overlay as a circular button */
+.tb-video-card .tb-play-overlay i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 3rem;
+  line-height: 1;
+  transition: background 0.2s;
+}
+
+.tb-video-card .tb-play-overlay:hover i {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.tb-video-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.tb-video-modal.active {
+  display: flex;
+}
+
+/*  SECTION: Songs Pane */
+/* Hide songs panes by default; they will be activated as a responsive grid.
+   On large screens the grid will display up to four items per row. */
+.tb-songs-pane {
+  display: none;
+}
+
+.tb-songs-pane.active {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .tb-songs-pane.active {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.tb-modal-content {
+  position: relative;
+  background: var(--tb-bg-elevated);
+  border-radius: var(--tb-radius-lg);
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+.tb-modal-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--tb-text);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.tb-modal-iframe-container {
+  width: 100%;
+  padding-top: 56.25%;
+  position: relative;
+}
+
+.tb-modal-iframe-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/*  SECTION: Song Play Button & Links  */
+
+.tb-song-play-btn {
+  border: none;
+  background: transparent;
+  color: var(--tb-accent);
+  font-size: 1.6rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem;
+}
+
+.tb-song-links {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.2rem;
+  /* push the link container to the right in the song row */
+  margin-left: auto;
+}
+
+.tb-song-links a {
+  color: var(--tb-highlight);
+  font-size: 1.6rem;
+  text-decoration: none;
+}
+
+/*  SECTION: Theme Toggle Button  */
+
+.tb-theme-toggle {
+  flex: 0 0 auto;
+  text-align: center;
+  color: var(--tb-muted);
+  font-size: 0.8rem;
+}
+
+/* Inline edit inputs used in the Music and Videos pages when editing
+   existing records from the front end.  These inputs use the
+   elevated background and border colours so they fit with both
+   dark and light themes. */
+.tb-inline-edit {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--tb-border);
+  background: var(--tb-bg-elevated);
+  color: var(--tb-text);
+  margin-bottom: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.tb-theme-toggle button {
+  border: none;
+  background: transparent;
+  color: var(--tb-muted);
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.tb-theme-toggle button.active {
+  color: var(--tb-highlight);
+}
+/*  SECTION: Settings Switch Styles  */
+.tb-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.tb-form-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.tb-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+}
+.tb-switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.tb-slider {
+  width: 48px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--tb-muted);
+  position: relative;
+  transition: background 0.3s;
+}
+.tb-slider::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--tb-bg-elevated);
+  transition: transform 0.3s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.tb-switch input:checked + .tb-slider {
+  background: var(--tb-highlight);
+}
+.tb-switch input:checked + .tb-slider::before {
+  transform: translateX(24px);
+}
+.tb-switch-label {
+  font-size: 0.85rem;
+  color: var(--tb-text);
+}
+.tb-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--tb-border);
+  background: var(--tb-bg-elevated);
+  color: var(--tb-text);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.tb-btn-secondary:hover {
+  background: rgba(34, 197, 94, 0.1);
+}
+.tb-btn-secondary i {
+  font-size: 1rem;
+}
+
+/*  SECTION: Loading State  */
+.tb-loading {
+  padding: 1.25rem;
+  text-align: center;
+  color: var(--tb-muted);
+  font-size: 0.9rem;
+}
+
+/*  SECTION: Analytics Box & Table  */
+.tb-analytics-box {
+  background: var(--tb-bg-elevated);
+  border: 1px solid var(--tb-border);
+  border-radius: var(--tb-radius-lg);
+  box-shadow: var(--tb-shadow-soft);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.tb-analytics-box h2, .tb-analytics-box h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  color: var(--tb-accent);
+}
+.tb-analytics-box p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+}
+.tb-analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.tb-analytics-table th, .tb-analytics-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--tb-border);
+  text-align: left;
+}
+.tb-analytics-table tr:nth-child(even) {
+  background: var(--tb-bg);
+}
+
+/* Analytics sub-boxes used on the video analytics page */
+.tb-analytics-subbox {
+  margin-bottom: 1rem;
+}
+.tb-analytics-subbox h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  color: var(--tb-accent);
+}
+.tb-analytics-subbox ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  list-style-type: decimal;
+  font-size: 0.85rem;
+}
+.tb-analytics-subbox li {
+  margin-bottom: 0.25rem;
+}

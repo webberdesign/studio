@@ -1,0 +1,25 @@
+<?php
+/*  PAGE NAME: pages/analytics.php
+    SECTION: Analytics Landing Page
+------------------------------------------------------------*/
+require_once __DIR__ . '/../config.php';
+
+// This page acts as a hub for analytics providers.  Instead of loading all
+// analytics at once, it links out to the dedicated YouTube and Spotify
+// analytics pages which load their own data (with a loading indicator).
+?>
+<section class="tb-section">
+    <h1 class="tb-title">Analytics</h1>
+    <p class="tb-subtitle">Choose which platform’s insights you’d like to view.</p>
+
+    <div class="tb-analytics-links">
+        <a href="?page=analytics-yt" class="tb-analytics-link">
+            <i class="fab fa-youtube"></i>
+            <span>YouTube Analytics</span>
+        </a>
+        <a href="?page=analytics-sp" class="tb-analytics-link">
+            <i class="fab fa-spotify"></i>
+            <span>Spotify Analytics</span>
+        </a>
+    </div>
+</section>

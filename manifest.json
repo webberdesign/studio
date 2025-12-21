@@ -1,0 +1,13 @@
+{
+  "name": "Titty Bingo Studio",
+  "short_name": "Titty Bingo",
+  "start_url": "/apps/studio/index.php",
+  "scope": "/apps/studio/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#0f172a",
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

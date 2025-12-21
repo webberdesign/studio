@@ -1,0 +1,11 @@
+# ===== SECRETS & CONFIG =====
+.env
+*.env
+settings.json
+
+
+# ===== OS / TOOLING =====
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
