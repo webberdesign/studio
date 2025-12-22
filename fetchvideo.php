@@ -43,6 +43,11 @@ function fetchTotalViews($videoId, $apiKey) {
 }
 
 function fetchAnalyticsData($accessToken, $videoId, $dimension, $title, $maxResults = null, $additionalFilters = '') {
+    if (!$accessToken) {
+        echo '<div class="tb-analytics-subbox"><h3>' . htmlspecialchars($title) . '</h3><p>Missing YouTube access token. Please configure OAuth credentials.</p></div>';
+        return;
+    }
+
     $startDate = '2000-01-01';
     $endDate   = date('Y-m-d');
     $metrics   = 'views';
@@ -66,6 +71,8 @@ function fetchAnalyticsData($accessToken, $videoId, $dimension, $title, $maxResu
             echo '<li>' . htmlspecialchars($row[0]) . ' – ' . $formattedViews . ' views</li>';
         }
         echo '</ol>';
+    } elseif (isset($response['error']['message'])) {
+        echo '<p>Unable to retrieve user activity data: ' . htmlspecialchars($response['error']['message']) . '</p>';
     } else {
         echo '<p>Unable to retrieve user activity data for the dimension: ' . htmlspecialchars($dimension) . '.</p>';
     }
