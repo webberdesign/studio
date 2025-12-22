@@ -17,9 +17,13 @@ if (!$videoId) {
     exit;
 }
 
-// Hard‑coded API key and channel ID – these should be stored in environment or config for production
-$apiKey    = 'AIzaSyBhWFgxvpgiXJguMbxRS6leAMKAclgR5Vc';
-$channelId = 'UCAk3B7M6cxXZl9hUBhp0u1g';
+// Read API credentials from config.php (constants) or environment variables
+$apiKey    = defined('YOUTUBE_API_KEY') ? YOUTUBE_API_KEY : getenv('YOUTUBE_API_KEY');
+$channelId = defined('YOUTUBE_CHANNEL_ID') ? YOUTUBE_CHANNEL_ID : getenv('YOUTUBE_CHANNEL_ID');
+if (!$apiKey || !$channelId) {
+    echo 'YouTube API key or channel ID is not configured. Set YOUTUBE_API_KEY and YOUTUBE_CHANNEL_ID in config.php or environment variables.';
+    exit;
+}
 
 // Get a fresh access token for the YouTube Analytics API
 $userId     = 1;
