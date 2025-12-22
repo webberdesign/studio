@@ -2,7 +2,7 @@
 .env
 *.env
 settings.json
-
+config.php
 
 # ===== OS / TOOLING =====
 .DS_Store
