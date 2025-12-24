@@ -8,7 +8,6 @@ $feedMessage = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_feed_post'])) {
-        $authorName = trim($_POST['author_name'] ?? '');
         $body       = trim($_POST['body'] ?? '');
         $youtubeUrl = trim($_POST['youtube_url'] ?? '');
 
@@ -18,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $stmt = $pdo->prepare("INSERT INTO tb_feed_posts (author_name, body, youtube_url, video_path) VALUES (?, ?, ?, ?)");
             $stmt->execute([
-                $authorName !== '' ? $authorName : null,
+                'Dahr',
                 $body,
                 $youtubeUrl !== '' ? $youtubeUrl : null,
                 $videoPath,
@@ -40,11 +39,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (isset($_POST['add_comment']) && !empty($_POST['post_id'])) {
         $postId     = (int) $_POST['post_id'];
-        $authorName = trim($_POST['comment_author'] ?? '');
         $comment    = trim($_POST['comment_body'] ?? '');
         if ($comment !== '') {
             $stmt = $pdo->prepare("INSERT INTO tb_feed_comments (post_id, author_name, body) VALUES (?, ?, ?)");
-            $stmt->execute([$postId, $authorName !== '' ? $authorName : null, $comment]);
+            $stmt->execute([$postId, 'Dahr', $comment]);
         }
     }
 }
@@ -65,12 +63,13 @@ $commentsStmt = $pdo->prepare("SELECT * FROM tb_feed_comments WHERE post_id = ? 
     <?php endif; ?>
 
     <div class="tb-feed-form">
-        <h2>Post an Update</h2>
-        <form method="post" enctype="multipart/form-data">
-            <label>
-                Display Name (optional)
-                <input type="text" name="author_name" placeholder="Your name">
-            </label>
+        <div class="tb-feed-form-header">
+            <h2>Post an Update</h2>
+            <button type="button" class="tb-toggle-pill tb-feed-toggle" id="tbFeedToggle">
+                <span>New Post</span>
+            </button>
+        </div>
+        <form method="post" enctype="multipart/form-data" id="tbFeedPostForm" class="tb-feed-form-body" hidden>
             <label>
                 Update Text
                 <textarea name="body" rows="4" required placeholder="Share something new..."></textarea>
@@ -107,7 +106,7 @@ $commentsStmt = $pdo->prepare("SELECT * FROM tb_feed_comments WHERE post_id = ? 
             <article class="tb-feed-card">
                 <header>
                     <div>
-                        <h3><?php echo htmlspecialchars($post['author_name'] ?: 'Studio Update'); ?></h3>
+                        <h3><?php echo htmlspecialchars($post['author_name'] ?: 'Dahr'); ?></h3>
                         <time><?php echo htmlspecialchars(date('M j, Y g:ia', strtotime($post['created_at']))); ?></time>
                     </div>
                 </header>
@@ -128,7 +127,9 @@ $commentsStmt = $pdo->prepare("SELECT * FROM tb_feed_comments WHERE post_id = ? 
                 <?php if (!empty($mediaItems)): ?>
                     <div class="tb-feed-gallery">
                         <?php foreach ($mediaItems as $media): ?>
-                            <img src="<?php echo htmlspecialchars($media['file_path']); ?>" alt="Feed media">
+                            <button type="button" class="tb-feed-image" data-image-src="<?php echo htmlspecialchars($media['file_path']); ?>">
+                                <img src="<?php echo htmlspecialchars($media['file_path']); ?>" alt="Feed media">
+                            </button>
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
@@ -141,7 +142,7 @@ $commentsStmt = $pdo->prepare("SELECT * FROM tb_feed_comments WHERE post_id = ? 
                         <ul>
                             <?php foreach ($comments as $comment): ?>
                                 <li>
-                                    <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Guest'); ?>:</strong>
+                                    <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Dahr'); ?>:</strong>
                                     <?php echo nl2br(htmlspecialchars($comment['body'])); ?>
                                 </li>
                             <?php endforeach; ?>
@@ -149,12 +150,77 @@ $commentsStmt = $pdo->prepare("SELECT * FROM tb_feed_comments WHERE post_id = ? 
                     <?php endif; ?>
                     <form method="post" class="tb-feed-comment-form">
                         <input type="hidden" name="post_id" value="<?php echo (int) $post['id']; ?>">
-                        <input type="text" name="comment_author" placeholder="Name (optional)">
                         <textarea name="comment_body" rows="2" required placeholder="Write a comment..."></textarea>
-                        <button type="submit" name="add_comment" class="tb-btn-secondary">Add Comment</button>
+                        <button type="submit" name="add_comment" class="tb-btn-secondary">Post Comment</button>
                     </form>
                 </div>
             </article>
         <?php endforeach; ?>
     </div>
 </section>
+
+<div class="tb-feed-modal" id="tbFeedModal" aria-hidden="true">
+    <div class="tb-feed-modal-content">
+        <button type="button" class="tb-feed-modal-close" id="tbFeedModalClose">&times;</button>
+        <img src="" alt="Feed image preview" id="tbFeedModalImage">
+    </div>
+</div>
+
+<script>
+(function() {
+  const toggleBtn = document.getElementById('tbFeedToggle');
+  const form = document.getElementById('tbFeedPostForm');
+  if (toggleBtn && form) {
+    toggleBtn.addEventListener('click', function() {
+      const isHidden = form.hasAttribute('hidden');
+      if (isHidden) {
+        form.removeAttribute('hidden');
+        toggleBtn.classList.add('active');
+        toggleBtn.querySelector('span').textContent = 'Hide Form';
+      } else {
+        form.setAttribute('hidden', '');
+        toggleBtn.classList.remove('active');
+        toggleBtn.querySelector('span').textContent = 'New Post';
+      }
+    });
+  }
+
+  const modal = document.getElementById('tbFeedModal');
+  const modalImg = document.getElementById('tbFeedModalImage');
+  const modalClose = document.getElementById('tbFeedModalClose');
+
+  function closeModal() {
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    if (modalImg) modalImg.src = '';
+  }
+
+  document.querySelectorAll('.tb-feed-image').forEach((button) => {
+    button.addEventListener('click', () => {
+      const src = button.getAttribute('data-image-src');
+      if (modal && modalImg && src) {
+        modalImg.src = src;
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+      }
+    });
+  });
+
+  if (modal) {
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) {
+        closeModal();
+      }
+    });
+  }
+  if (modalClose) {
+    modalClose.addEventListener('click', closeModal);
+  }
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeModal();
+    }
+  });
+})();
+</script>

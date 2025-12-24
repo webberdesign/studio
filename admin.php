@@ -193,7 +193,6 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
 
     // Add feed post
     if (isset($_POST['add_feed_post'])) {
-        $authorName = trim($_POST['author_name'] ?? '');
         $body       = trim($_POST['body'] ?? '');
         $youtubeUrl = trim($_POST['youtube_url'] ?? '');
         if ($body !== '') {
@@ -202,7 +201,7 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
 
             $stmt = $pdo->prepare("INSERT INTO tb_feed_posts (author_name, body, youtube_url, video_path) VALUES (?, ?, ?, ?)");
             $stmt->execute([
-                $authorName !== '' ? $authorName : null,
+                'Dahr',
                 $body,
                 $youtubeUrl !== '' ? $youtubeUrl : null,
                 $videoPath,
@@ -522,9 +521,6 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
                     <h2>Feed</h2>
                     <form method="post" enctype="multipart/form-data" class="tb-form-inline">
                         <input type="hidden" name="tab" value="feed">
-                        <label>Display Name (optional)
-                            <input type="text" name="author_name">
-                        </label>
                         <label>Update Text
                             <textarea name="body" rows="3" required></textarea>
                         </label>
@@ -554,7 +550,7 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
                             <article class="tb-feed-card">
                                 <header>
                                     <div>
-                                        <h3><?php echo htmlspecialchars($post['author_name'] ?: 'Studio Update'); ?></h3>
+                                        <h3><?php echo htmlspecialchars($post['author_name'] ?: 'Dahr'); ?></h3>
                                         <time><?php echo htmlspecialchars(date('M j, Y g:ia', strtotime($post['created_at']))); ?></time>
                                     </div>
                                     <form method="post" class="tb-inline-delete">
@@ -579,7 +575,9 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
                                 <?php if (!empty($mediaItems)): ?>
                                     <div class="tb-feed-gallery">
                                         <?php foreach ($mediaItems as $media): ?>
-                                            <img src="<?php echo htmlspecialchars($media['file_path']); ?>" alt="Feed media">
+                                            <button type="button" class="tb-feed-image" data-image-src="<?php echo htmlspecialchars($media['file_path']); ?>">
+                                                <img src="<?php echo htmlspecialchars($media['file_path']); ?>" alt="Feed media">
+                                            </button>
                                         <?php endforeach; ?>
                                     </div>
                                 <?php endif; ?>
@@ -592,7 +590,7 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
                                         <ul>
                                             <?php foreach ($comments as $comment): ?>
                                                 <li>
-                                                    <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Guest'); ?>:</strong>
+                                                    <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Dahr'); ?>:</strong>
                                                     <?php echo nl2br(htmlspecialchars($comment['body'])); ?>
                                                     <form method="post" class="tb-inline-delete">
                                                         <input type="hidden" name="tab" value="feed">
@@ -613,6 +611,12 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
             <?php endif; ?>
         </main>
     <?php endif; ?>
+</div>
+<div class="tb-feed-modal" id="tbFeedModal" aria-hidden="true">
+    <div class="tb-feed-modal-content">
+        <button type="button" class="tb-feed-modal-close" id="tbFeedModalClose">&times;</button>
+        <img src="" alt="Feed image preview" id="tbFeedModalImage">
+    </div>
 </div>
 <script>
 // Initialize Sortable for videos and songs if lists exist
@@ -650,6 +654,47 @@ window.addEventListener('load', function() {
     }
   }
 });
+
+// Feed image modal for admin
+(function() {
+  const modal = document.getElementById('tbFeedModal');
+  const modalImg = document.getElementById('tbFeedModalImage');
+  const modalClose = document.getElementById('tbFeedModalClose');
+
+  function closeModal() {
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    if (modalImg) modalImg.src = '';
+  }
+
+  document.querySelectorAll('.tb-feed-image').forEach((button) => {
+    button.addEventListener('click', () => {
+      const src = button.getAttribute('data-image-src');
+      if (modal && modalImg && src) {
+        modalImg.src = src;
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+      }
+    });
+  });
+
+  if (modal) {
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) {
+        closeModal();
+      }
+    });
+  }
+  if (modalClose) {
+    modalClose.addEventListener('click', closeModal);
+  }
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeModal();
+    }
+  });
+})();
 
   // Inline edit via top forms for videos
   (function() {
