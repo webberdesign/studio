@@ -12,7 +12,7 @@ $currentTheme = tb_get_theme();
 // analytics subpages (analytics‑yt and analytics‑sp are still routable but
 // aren’t exposed directly in navigation).
 $page = $_GET['page'] ?? 'videos';
-$validPages = ['videos', 'music', 'analytics', 'analytics-yt', 'analytics-sp', 'settings', 'collection'];
+$validPages = ['videos', 'music', 'feed', 'analytics', 'analytics-yt', 'analytics-sp', 'settings', 'collection'];
 if (!in_array($page, $validPages, true)) {
     $page = 'videos';
 }
@@ -68,6 +68,9 @@ if (!in_array($page, $validPages, true)) {
         <a href="?page=music" class="<?php echo ($page === 'music') ? 'active' : ''; ?>">
             <i class="fas fa-music"></i> Music
         </a>
+        <a href="?page=feed" class="<?php echo ($page === 'feed') ? 'active' : ''; ?>">
+            <i class="fas fa-newspaper"></i> Feed
+        </a>
         <a href="?page=analytics" class="<?php echo ($page === 'analytics') ? 'active' : ''; ?>">
             <i class="fas fa-chart-line"></i> Analytics
         </a>
@@ -111,6 +114,9 @@ if (!in_array($page, $validPages, true)) {
             case 'analytics-sp':
                 include __DIR__ . '/pages/analytics_spotify.php';
                 break;
+            case 'feed':
+                include __DIR__ . '/pages/feed.php';
+                break;
             case 'settings':
                 include __DIR__ . '/pages/settings.php';
                 break;
@@ -132,6 +138,9 @@ if (!in_array($page, $validPages, true)) {
         </a>
         <a href="?page=music" class="tb-bottom-item <?php echo ($page === 'music') ? 'active' : ''; ?>">
             <i class="fas fa-music"></i><span>Music</span>
+        </a>
+        <a href="?page=feed" class="tb-bottom-item <?php echo ($page === 'feed') ? 'active' : ''; ?>">
+            <i class="fas fa-newspaper"></i><span>Feed</span>
         </a>
         <a href="?page=analytics" class="tb-bottom-item <?php echo ($page === 'analytics') ? 'active' : ''; ?>">
             <i class="fas fa-chart-line"></i><span>Analytics</span>

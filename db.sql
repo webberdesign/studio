@@ -43,3 +43,33 @@ CREATE TABLE tb_collections (
   cover_path VARCHAR(255) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+/*
+ * Feed tables for social-style updates with media and comments.
+ */
+CREATE TABLE tb_feed_posts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  author_name VARCHAR(100) DEFAULT NULL,
+  body TEXT NOT NULL,
+  youtube_url VARCHAR(255) DEFAULT NULL,
+  video_path VARCHAR(255) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE tb_feed_media (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  post_id INT NOT NULL,
+  file_path VARCHAR(255) NOT NULL,
+  media_type ENUM('image','video') NOT NULL DEFAULT 'image',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (post_id) REFERENCES tb_feed_posts(id) ON DELETE CASCADE
+);
+
+CREATE TABLE tb_feed_comments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  post_id INT NOT NULL,
+  author_name VARCHAR(100) DEFAULT NULL,
+  body TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (post_id) REFERENCES tb_feed_posts(id) ON DELETE CASCADE
+);
