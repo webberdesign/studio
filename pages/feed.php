@@ -106,7 +106,7 @@ $commentsStmt = $pdo->prepare("SELECT * FROM tb_feed_comments WHERE post_id = ? 
             <article class="tb-feed-card">
                 <header>
                     <div>
-                        <h3><?php echo htmlspecialchars($post['author_name'] ?: 'Studio Update'); ?></h3>
+                        <h3><?php echo htmlspecialchars($post['author_name'] ?: 'Dahr'); ?></h3>
                         <time><?php echo htmlspecialchars(date('M j, Y g:ia', strtotime($post['created_at']))); ?></time>
                     </div>
                 </header>
@@ -142,7 +142,7 @@ $commentsStmt = $pdo->prepare("SELECT * FROM tb_feed_comments WHERE post_id = ? 
                         <ul>
                             <?php foreach ($comments as $comment): ?>
                                 <li>
-                                    <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Guest'); ?>:</strong>
+                                    <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Dahr'); ?>:</strong>
                                     <?php echo nl2br(htmlspecialchars($comment['body'])); ?>
                                 </li>
                             <?php endforeach; ?>
