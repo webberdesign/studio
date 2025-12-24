@@ -519,24 +519,29 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
                 ?>
                 <section class="tb-admin-section">
                     <h2>Feed</h2>
-                    <form method="post" enctype="multipart/form-data" class="tb-form-inline">
-                        <input type="hidden" name="tab" value="feed">
-                        <label>Update Text
-                            <textarea name="body" rows="3" required></textarea>
-                        </label>
-                        <label>YouTube URL (optional)
-                            <input type="url" name="youtube_url">
-                        </label>
-                        <label>Upload Photos (optional)
-                            <input type="file" name="photos[]" accept="image/*" multiple>
-                        </label>
-                        <label>Upload Video (MP4 or MOV)
-                            <input type="file" name="video_upload" accept="video/mp4,video/quicktime">
-                        </label>
-                        <button type="submit" name="add_feed_post" class="tb-btn-primary">
-                            <i class="fas fa-plus"></i> Post Update
-                        </button>
-                    </form>
+                    <div class="tb-feed-form">
+                        <div class="tb-feed-form-header">
+                            <h3>Post an Update</h3>
+                        </div>
+                        <form method="post" enctype="multipart/form-data" class="tb-feed-form-body">
+                            <input type="hidden" name="tab" value="feed">
+                            <label>Update Text
+                                <textarea name="body" rows="4" required placeholder="Share something new..."></textarea>
+                            </label>
+                            <label>YouTube URL (optional)
+                                <input type="url" name="youtube_url" placeholder="https://www.youtube.com/watch?v=...">
+                            </label>
+                            <label>Upload Photos (optional)
+                                <input type="file" name="photos[]" accept="image/*" multiple>
+                            </label>
+                            <label>Upload Video (MP4 or MOV)
+                                <input type="file" name="video_upload" accept="video/mp4,video/quicktime">
+                            </label>
+                            <button type="submit" name="add_feed_post" class="tb-btn-primary">
+                                <i class="fas fa-plus"></i> Post Update
+                            </button>
+                        </form>
+                    </div>
 
                     <div class="tb-admin-feed-list">
                         <?php foreach ($feedPosts as $post): ?>
