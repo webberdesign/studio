@@ -3,10 +3,11 @@
     SECTION: Admin & Settings Panel
 ------------------------------------------------------------*/
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/feed_helpers.php';
 
 // Determine which tab is selected
 $tab = $_GET['tab'] ?? 'videos';
-$validTabs = ['videos','songs','collections','settings'];
+$validTabs = ['videos', 'songs', 'collections', 'feed', 'settings'];
 if (!in_array($tab, $validTabs, true)) {
     $tab = 'videos';
 }
@@ -190,6 +191,44 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
         $pdo->prepare("UPDATE tb_songs SET collection_id = NULL WHERE collection_id = ?")->execute([$_POST['id']]);
     }
 
+    // Add feed post
+    if (isset($_POST['add_feed_post'])) {
+        $body       = trim($_POST['body'] ?? '');
+        $youtubeUrl = trim($_POST['youtube_url'] ?? '');
+        if ($body !== '') {
+            $photoPaths = tb_feed_handle_photo_uploads($_FILES['photos'] ?? null);
+            $videoPath  = tb_feed_handle_video_upload($_FILES['video_upload'] ?? null);
+
+            $stmt = $pdo->prepare("INSERT INTO tb_feed_posts (author_name, body, youtube_url, video_path) VALUES (?, ?, ?, ?)");
+            $stmt->execute([
+                'Dahr',
+                $body,
+                $youtubeUrl !== '' ? $youtubeUrl : null,
+                $videoPath,
+            ]);
+
+            $postId = (int) $pdo->lastInsertId();
+            if (!empty($photoPaths)) {
+                $mediaStmt = $pdo->prepare("INSERT INTO tb_feed_media (post_id, file_path, media_type) VALUES (?, ?, 'image')");
+                foreach ($photoPaths as $path) {
+                    $mediaStmt->execute([$postId, $path]);
+                }
+            }
+        }
+    }
+
+    // Delete feed post
+    if (isset($_POST['delete_feed_post']) && !empty($_POST['delete_feed_post'])) {
+        tb_feed_delete_post($pdo, (int) $_POST['delete_feed_post']);
+    }
+
+    // Delete feed comment
+    if (isset($_POST['delete_feed_comment']) && !empty($_POST['delete_feed_comment'])) {
+        $commentId = (int) $_POST['delete_feed_comment'];
+        $stmt = $pdo->prepare("DELETE FROM tb_feed_comments WHERE id = ?");
+        $stmt->execute([$commentId]);
+    }
+
     // Update settings (theme and service visibility)
     if (isset($_POST['update_theme'])) {
         $newTheme = $_POST['theme'] ?? 'dark';
@@ -259,6 +298,7 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
                 <a href="?tab=videos" class="<?php echo ($tab === 'videos') ? 'active' : ''; ?>">Videos</a>
                 <a href="?tab=songs" class="<?php echo ($tab === 'songs') ? 'active' : ''; ?>">Music</a>
                 <a href="?tab=collections" class="<?php echo ($tab === 'collections') ? 'active' : ''; ?>">Collections</a>
+                <a href="?tab=feed" class="<?php echo ($tab === 'feed') ? 'active' : ''; ?>">Feed</a>
                 <a href="?tab=settings" class="<?php echo ($tab === 'settings') ? 'active' : ''; ?>">Settings</a>
             </div>
 
@@ -470,9 +510,118 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
                         </button>
                     </form>
                 </section>
+            <?php elseif ($tab === 'feed'): ?>
+                <?php
+                $feedPosts = $pdo->query("SELECT * FROM tb_feed_posts ORDER BY created_at DESC")
+                                 ->fetchAll(PDO::FETCH_ASSOC);
+                $mediaStmt = $pdo->prepare("SELECT * FROM tb_feed_media WHERE post_id = ? ORDER BY created_at ASC");
+                $commentsStmt = $pdo->prepare("SELECT * FROM tb_feed_comments WHERE post_id = ? ORDER BY created_at ASC");
+                ?>
+                <section class="tb-admin-section">
+                    <h2>Feed</h2>
+                    <div class="tb-feed-form">
+                        <div class="tb-feed-form-header">
+                            <h3>Post an Update</h3>
+                        </div>
+                        <form method="post" enctype="multipart/form-data" class="tb-feed-form-body">
+                            <input type="hidden" name="tab" value="feed">
+                            <label>Update Text
+                                <textarea name="body" rows="4" required placeholder="Share something new..."></textarea>
+                            </label>
+                            <label>YouTube URL (optional)
+                                <input type="url" name="youtube_url" placeholder="https://www.youtube.com/watch?v=...">
+                            </label>
+                            <label>Upload Photos (optional)
+                                <input type="file" name="photos[]" accept="image/*" multiple>
+                            </label>
+                            <label>Upload Video (MP4 or MOV)
+                                <input type="file" name="video_upload" accept="video/mp4,video/quicktime">
+                            </label>
+                            <button type="submit" name="add_feed_post" class="tb-btn-primary">
+                                <i class="fas fa-plus"></i> Post Update
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="tb-admin-feed-list">
+                        <?php foreach ($feedPosts as $post): ?>
+                            <?php
+                            $mediaStmt->execute([$post['id']]);
+                            $mediaItems = $mediaStmt->fetchAll(PDO::FETCH_ASSOC);
+                            $commentsStmt->execute([$post['id']]);
+                            $comments = $commentsStmt->fetchAll(PDO::FETCH_ASSOC);
+                            $youtubeId = $post['youtube_url'] ? tb_feed_parse_youtube_id($post['youtube_url']) : null;
+                            ?>
+                            <article class="tb-feed-card">
+                                <header>
+                                    <div>
+                                        <h3><?php echo htmlspecialchars($post['author_name'] ?: 'Dahr'); ?></h3>
+                                        <time><?php echo htmlspecialchars(date('M j, Y g:ia', strtotime($post['created_at']))); ?></time>
+                                    </div>
+                                    <form method="post" class="tb-inline-delete">
+                                        <input type="hidden" name="tab" value="feed">
+                                        <button type="submit" name="delete_feed_post" value="<?php echo (int) $post['id']; ?>" class="tb-inline-delete-btn"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                </header>
+                                <p class="tb-feed-body"><?php echo nl2br(htmlspecialchars($post['body'])); ?></p>
+
+                                <?php if ($youtubeId): ?>
+                                    <div class="tb-feed-media">
+                                        <iframe src="https://www.youtube.com/embed/<?php echo htmlspecialchars($youtubeId); ?>" allowfullscreen></iframe>
+                                    </div>
+                                <?php endif; ?>
+
+                                <?php if (!empty($post['video_path'])): ?>
+                                    <div class="tb-feed-media">
+                                        <video controls src="<?php echo htmlspecialchars($post['video_path']); ?>"></video>
+                                    </div>
+                                <?php endif; ?>
+
+                                <?php if (!empty($mediaItems)): ?>
+                                    <div class="tb-feed-gallery">
+                                        <?php foreach ($mediaItems as $media): ?>
+                                            <button type="button" class="tb-feed-image" data-image-src="<?php echo htmlspecialchars($media['file_path']); ?>">
+                                                <img src="<?php echo htmlspecialchars($media['file_path']); ?>" alt="Feed media">
+                                            </button>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+
+                                <div class="tb-feed-comments">
+                                    <h4>Comments</h4>
+                                    <?php if (empty($comments)): ?>
+                                        <p class="tb-muted">No comments yet.</p>
+                                    <?php else: ?>
+                                        <ul>
+                                            <?php foreach ($comments as $comment): ?>
+                                                <li>
+                                                    <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Dahr'); ?>:</strong>
+                                                    <?php echo nl2br(htmlspecialchars($comment['body'])); ?>
+                                                    <form method="post" class="tb-inline-delete">
+                                                        <input type="hidden" name="tab" value="feed">
+                                                        <button type="submit" name="delete_feed_comment" value="<?php echo (int) $comment['id']; ?>" class="tb-inline-delete-btn"><i class="fas fa-trash"></i></button>
+                                                    </form>
+                                                </li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    <?php endif; ?>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                        <?php if (empty($feedPosts)): ?>
+                            <p class="tb-empty">No feed updates yet.</p>
+                        <?php endif; ?>
+                    </div>
+                </section>
             <?php endif; ?>
         </main>
     <?php endif; ?>
+</div>
+<div class="tb-feed-modal" id="tbFeedModal" aria-hidden="true">
+    <div class="tb-feed-modal-content">
+        <button type="button" class="tb-feed-modal-close" id="tbFeedModalClose">&times;</button>
+        <img src="" alt="Feed image preview" id="tbFeedModalImage">
+    </div>
 </div>
 <script>
 // Initialize Sortable for videos and songs if lists exist
@@ -510,6 +659,47 @@ window.addEventListener('load', function() {
     }
   }
 });
+
+// Feed image modal for admin
+(function() {
+  const modal = document.getElementById('tbFeedModal');
+  const modalImg = document.getElementById('tbFeedModalImage');
+  const modalClose = document.getElementById('tbFeedModalClose');
+
+  function closeModal() {
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    if (modalImg) modalImg.src = '';
+  }
+
+  document.querySelectorAll('.tb-feed-image').forEach((button) => {
+    button.addEventListener('click', () => {
+      const src = button.getAttribute('data-image-src');
+      if (modal && modalImg && src) {
+        modalImg.src = src;
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+      }
+    });
+  });
+
+  if (modal) {
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) {
+        closeModal();
+      }
+    });
+  }
+  if (modalClose) {
+    modalClose.addEventListener('click', closeModal);
+  }
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeModal();
+    }
+  });
+})();
 
   // Inline edit via top forms for videos
   (function() {
