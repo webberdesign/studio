@@ -17,9 +17,13 @@ if (!$videoId) {
     exit;
 }
 
-// Hard‑coded API key and channel ID – these should be stored in environment or config for production
-$apiKey    = 'AIzaSyBhWFgxvpgiXJguMbxRS6leAMKAclgR5Vc';
-$channelId = 'UCAk3B7M6cxXZl9hUBhp0u1g';
+// Read API credentials from config.php (constants) or environment variables
+$apiKey    = defined('YOUTUBE_API_KEY') ? YOUTUBE_API_KEY : getenv('YOUTUBE_API_KEY');
+$channelId = defined('YOUTUBE_CHANNEL_ID') ? YOUTUBE_CHANNEL_ID : getenv('YOUTUBE_CHANNEL_ID');
+if (!$apiKey || !$channelId) {
+    echo 'YouTube API key or channel ID is not configured. Set YOUTUBE_API_KEY and YOUTUBE_CHANNEL_ID in config.php or environment variables.';
+    exit;
+}
 
 // Get a fresh access token for the YouTube Analytics API
 $userId     = 1;
@@ -43,6 +47,11 @@ function fetchTotalViews($videoId, $apiKey) {
 }
 
 function fetchAnalyticsData($accessToken, $videoId, $dimension, $title, $maxResults = null, $additionalFilters = '') {
+    if (!$accessToken) {
+        echo '<div class="tb-analytics-subbox"><h3>' . htmlspecialchars($title) . '</h3><p>Missing YouTube access token. Please configure OAuth credentials.</p></div>';
+        return;
+    }
+
     $startDate = '2000-01-01';
     $endDate   = date('Y-m-d');
     $metrics   = 'views';
@@ -66,6 +75,8 @@ function fetchAnalyticsData($accessToken, $videoId, $dimension, $title, $maxResu
             echo '<li>' . htmlspecialchars($row[0]) . ' – ' . $formattedViews . ' views</li>';
         }
         echo '</ol>';
+    } elseif (isset($response['error']['message'])) {
+        echo '<p>Unable to retrieve user activity data: ' . htmlspecialchars($response['error']['message']) . '</p>';
     } else {
         echo '<p>Unable to retrieve user activity data for the dimension: ' . htmlspecialchars($dimension) . '.</p>';
     }
