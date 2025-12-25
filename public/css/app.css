@@ -196,7 +196,7 @@ body.tb-body {
 .tb-main {
   flex: 1;
   padding: 1.25rem 1rem 1.5rem;
-  max-width: 960px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -619,6 +619,9 @@ body.tb-body {
 .tb-admin-main {
   padding: 1.25rem 1rem 1.5rem;
   flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .tb-form-card {
@@ -1385,6 +1388,37 @@ body.tb-body {
   margin-bottom: 1rem;
 }
 .tb-muted {
+  color: var(--tb-muted);
+}
+
+.tb-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.tb-stat-card {
+  background: var(--tb-card);
+  border: 1px solid var(--tb-border);
+  border-radius: var(--tb-radius-lg);
+  padding: 1rem;
+  box-shadow: var(--tb-shadow-soft);
+}
+.tb-stat-card h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+}
+.tb-stat-card .tb-stat-value {
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+.tb-stat-card.is-disabled {
+  opacity: 0.45;
+  filter: grayscale(0.9);
+}
+.tb-coming-soon {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
   color: var(--tb-muted);
 }
 

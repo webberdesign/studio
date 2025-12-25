@@ -12,6 +12,7 @@ $currentTheme = tb_get_theme();
 // analytics subpages (analytics‑yt and analytics‑sp are still routable but
 // aren’t exposed directly in navigation).
 $page = $_GET['page'] ?? 'videos';
+$validPages = ['videos', 'music', 'feed', 'analytics', 'analytics-yt', 'analytics-web', 'analytics-app', 'analytics-sp', 'settings', 'collection'];
 $validPages = ['videos', 'music', 'feed', 'analytics', 'analytics-yt', 'analytics-sp', 'settings', 'collection'];
 if (!in_array($page, $validPages, true)) {
     $page = 'videos';
@@ -110,6 +111,12 @@ if (!in_array($page, $validPages, true)) {
                 break;
             case 'analytics-yt':
                 include __DIR__ . '/pages/analytics_youtube.php';
+                break;
+            case 'analytics-web':
+                include __DIR__ . '/pages/analytics_web.php';
+                break;
+            case 'analytics-app':
+                include __DIR__ . '/pages/analytics_app.php';
                 break;
             case 'analytics-sp':
                 include __DIR__ . '/pages/analytics_spotify.php';
