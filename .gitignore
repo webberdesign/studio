@@ -4,6 +4,10 @@
 settings.json
 config.php
 
+# Runtime (server-created)
+error_log
+uploads/
+
 # ===== OS / TOOLING =====
 .DS_Store
 Thumbs.db
