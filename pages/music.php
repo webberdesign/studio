@@ -36,91 +36,94 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
     <h1 class="tb-title">Music</h1>
     <p class="tb-subtitle">Take a listen to our unreleased demos or groove to what’s out now.</p>
 
-    <!-- SECTION: Collections / Albums -->
-    <?php if (!empty($collections)): ?>
-    <h2 style="margin-top:0.5rem; font-size:1.1rem;">Albums</h2>
-    <div class="tb-card-grid" style="margin-bottom:1rem;">
-        <?php foreach ($collections as $c): ?>
-        <?php $cover = !empty($c['cover_path']) ? $c['cover_path'] : $placeholderCover; ?>
-        <a href="?page=collection&amp;id=<?php echo $c['id']; ?>" class="tb-card" style="text-decoration:none;">
-            <img src="<?php echo htmlspecialchars($cover); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="tb-card-thumb">
-            <div class="tb-card-body">
-                <h3 class="tb-card-title" style="font-size:0.95rem; margin:0; color:inherit;">
-                    <?php echo htmlspecialchars($c['name']); ?>
-                </h3>
-            </div>
-        </a>
-        <?php endforeach; ?>
-    </div>
-    <?php endif; ?>
-
-    <!-- SECTION: Toggle between unreleased and released songs -->
+    <!-- SECTION: Toggle between released, unreleased, and collections -->
     <div class="tb-toggle-pill" id="tbSongsToggle">
-        <button type="button" class="active" data-target="unreleased">Unreleased</button>
-        <button type="button" data-target="released">Released</button>
+        <button type="button" class="active" data-target="released">Released</button>
+        <button type="button" data-target="unreleased">Unreleased</button>
+        <button type="button" data-target="collections">Collections</button>
     </div>
 
     <!-- Unreleased Songs -->
-    <div id="tbSongsUnreleased" class="tb-songs-pane active">
-        <?php foreach ($unreleased as $song): ?>
-            <article class="tb-song-card" data-id="<?php echo $song['id']; ?>">
-                <div class="tb-song-media">
-                    <?php if (!empty($song['cover_path'])): ?>
-                        <img src="<?php echo htmlspecialchars($song['cover_path']); ?>"
-                             alt="<?php echo htmlspecialchars($song['title']); ?>"
-                             class="tb-song-cover">
-                    <?php else: ?>
-                        <img src="<?php echo $placeholderCover; ?>"
-                             alt="<?php echo htmlspecialchars($song['title']); ?>"
-                             class="tb-song-cover">
-                    <?php endif; ?>
-                </div>
-                <div class="tb-song-body">
-                    <h2 class="tb-card-title"><?php echo htmlspecialchars($song['title']); ?></h2>
-                    <?php if (!empty($song['mp3_path'])): ?>
-                        <button class="tb-song-play-btn" data-src="<?php echo htmlspecialchars($song['mp3_path']); ?>"><i class="fas fa-play"></i></button>
-                    <?php endif; ?>
-                </div>
-            </article>
-        <?php endforeach; ?>
-        <?php if (empty($unreleased)): ?>
+    <div id="tbSongsUnreleased" class="tb-songs-pane tb-song-list-pane">
+        <?php if (!empty($unreleased)): ?>
+            <div class="tb-card-list">
+                <?php foreach ($unreleased as $song): ?>
+                    <?php $cover = !empty($song['cover_path']) ? $song['cover_path'] : $placeholderCover; ?>
+                    <article class="tb-song-card">
+                        <div class="tb-song-media tb-song-media--cover">
+                            <img src="<?php echo htmlspecialchars($cover); ?>"
+                                 alt="<?php echo htmlspecialchars($song['title']); ?>"
+                                 class="tb-song-cover<?php echo empty($song['cover_path']) ? ' tb-song-cover--placeholder' : ''; ?>">
+                        </div>
+                        <div class="tb-song-body">
+                            <h2 class="tb-card-title"><?php echo htmlspecialchars($song['title']); ?></h2>
+                            <?php if (!empty($song['mp3_path'])): ?>
+                                <button class="tb-song-play-btn" data-src="<?php echo htmlspecialchars($song['mp3_path']); ?>"><i class="fas fa-play"></i></button>
+                            <?php endif; ?>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
             <p class="tb-empty">No unreleased tracks yet.</p>
         <?php endif; ?>
     </div>
 
     <!-- Released Songs -->
-    <div id="tbSongsReleased" class="tb-songs-pane">
-        <?php foreach ($releasedSongs as $song): ?>
-            <article class="tb-song-card" data-id="<?php echo $song['id']; ?>">
-                <div class="tb-song-media">
-                    <?php if (!empty($song['cover_path'])): ?>
-                        <img src="<?php echo htmlspecialchars($song['cover_path']); ?>"
-                             alt="<?php echo htmlspecialchars($song['title']); ?>"
-                             class="tb-song-cover">
-                    <?php else: ?>
-                        <img src="<?php echo $placeholderCover; ?>"
-                             alt="<?php echo htmlspecialchars($song['title']); ?>"
-                             class="tb-song-cover">
-                    <?php endif; ?>
-                </div>
-                <div class="tb-song-body">
-                    <h2 class="tb-card-title"><?php echo htmlspecialchars($song['title']); ?></h2>
-                    <?php if (!empty($song['mp3_path'])): ?>
-                        <button class="tb-song-play-btn" data-src="<?php echo htmlspecialchars($song['mp3_path']); ?>"><i class="fas fa-play"></i></button>
-                    <?php endif; ?>
-                    <div class="tb-song-links">
-                        <?php if ($showAppleGlobal && !empty($song['apple_music_url'])): ?>
-                            <a href="<?php echo htmlspecialchars($song['apple_music_url']); ?>" target="_blank" rel="noopener"><i class="fab fa-apple"></i></a>
-                        <?php endif; ?>
-                        <?php if ($showSpotifyGlobal && !empty($song['spotify_url'])): ?>
-                            <a href="<?php echo htmlspecialchars($song['spotify_url']); ?>" target="_blank" rel="noopener"><i class="fab fa-spotify"></i></a>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </article>
-        <?php endforeach; ?>
-        <?php if (empty($releasedSongs)): ?>
+    <div id="tbSongsReleased" class="tb-songs-pane active tb-song-list-pane">
+        <?php if (!empty($releasedSongs)): ?>
+            <div class="tb-card-list">
+                <?php foreach ($releasedSongs as $song): ?>
+                    <?php $cover = !empty($song['cover_path']) ? $song['cover_path'] : $placeholderCover; ?>
+                    <article class="tb-song-card">
+                        <div class="tb-song-media tb-song-media--cover">
+                            <img src="<?php echo htmlspecialchars($cover); ?>"
+                                 alt="<?php echo htmlspecialchars($song['title']); ?>"
+                                 class="tb-song-cover<?php echo empty($song['cover_path']) ? ' tb-song-cover--placeholder' : ''; ?>">
+                        </div>
+                        <div class="tb-song-body">
+                            <h2 class="tb-card-title"><?php echo htmlspecialchars($song['title']); ?></h2>
+                            <?php if (!empty($song['mp3_path'])): ?>
+                                <button class="tb-song-play-btn" data-src="<?php echo htmlspecialchars($song['mp3_path']); ?>"><i class="fas fa-play"></i></button>
+                            <?php endif; ?>
+                            <div class="tb-song-links">
+                                <?php if ($showAppleGlobal && !empty($song['apple_music_url'])): ?>
+                                    <a href="<?php echo htmlspecialchars($song['apple_music_url']); ?>" target="_blank" rel="noopener"><i class="fab fa-apple"></i></a>
+                                <?php endif; ?>
+                                <?php if ($showSpotifyGlobal && !empty($song['spotify_url'])): ?>
+                                    <a href="<?php echo htmlspecialchars($song['spotify_url']); ?>" target="_blank" rel="noopener"><i class="fab fa-spotify"></i></a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
             <p class="tb-empty">No released tracks yet.</p>
+        <?php endif; ?>
+    </div>
+
+    <!-- Collections -->
+    <div id="tbSongsCollections" class="tb-songs-pane">
+        <?php if (!empty($collections)): ?>
+            <div class="tb-card-grid" style="margin-bottom:1rem;">
+                <?php foreach ($collections as $c): ?>
+                    <?php
+                    $cover = !empty($c['cover_path']) ? $c['cover_path'] : $placeholderCover;
+                    $coverClass = !empty($c['cover_path']) ? '' : ' is-placeholder';
+                    ?>
+                    <a href="?page=collection&amp;id=<?php echo $c['id']; ?>" class="tb-card" style="text-decoration:none;">
+                        <img src="<?php echo htmlspecialchars($cover); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="tb-card-thumb tb-collection-cover<?php echo $coverClass; ?>">
+                        <div class="tb-card-body">
+                            <h3 class="tb-card-title" style="font-size:0.95rem; margin:0; color:inherit;">
+                                <?php echo htmlspecialchars($c['name']); ?>
+                            </h3>
+                        </div>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
+            <p class="tb-empty">No collections yet.</p>
         <?php endif; ?>
     </div>
 </section>
