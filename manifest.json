@@ -1,8 +1,8 @@
 {
   "name": "Titty Bingo Studio",
   "short_name": "Titty Bingo",
-  "start_url": "/apps/studio/index.php",
-  "scope": "/apps/studio/",
+  "start_url": "/app/studio/index.php",
+  "scope": "/app/studio/",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#0f172a",
