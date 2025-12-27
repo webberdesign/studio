@@ -1195,6 +1195,10 @@ body.tb-body {
   flex-direction: column;
 }
 
+.tb-video-card .tb-card-thumb {
+  aspect-ratio: 16 / 9;
+}
+
 .tb-video-card .tb-play-overlay {
   position: absolute;
   inset: 0;
