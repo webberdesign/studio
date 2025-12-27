@@ -5,6 +5,7 @@
 require_once __DIR__ . '/../config.php';
 ?>
 <section class="tb-section">
+    <a href="index.php?page=analytics" class="tb-btn-secondary tb-back-link"><i class="fas fa-arrow-left"></i> Back to Analytics</a>
     <h1 class="tb-title">TB MusicBox App</h1>
     <p class="tb-subtitle">Coming soon &mdash; app engagement and playback analytics.</p>
 

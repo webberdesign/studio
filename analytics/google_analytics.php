@@ -234,7 +234,7 @@ $topPageReport = ga_fetch_report(
     ]
 );
 
-$genderReport = ga_fetch_report(
+$referrerReport = ga_fetch_report(
     $propertyId,
     ['screenPageViews'],
     ['sessionSourceMedium'],
@@ -335,6 +335,7 @@ foreach ($stats as $stat) {
 
 $excludedPages = [
     '/firestone-park/firestone-park-rental-rates/',
+    '/firestone-park/firestone-pool/',
 ];
 $topPages = [];
 if (!empty($topPageReport['rows'])) {
@@ -377,8 +378,6 @@ if (!empty($topPageReport['rows'])) {
 
 <?php
 $yearlyViews = [
-    '2021' => 0,
-    '2022' => 0,
     '2023' => 0,
     '2024' => 0,
     '2025' => 0,

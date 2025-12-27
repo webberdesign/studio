@@ -1458,6 +1458,10 @@ body.tb-body {
 .tb-btn-secondary i {
   font-size: 1rem;
 }
+.tb-back-link {
+  margin-bottom: 0.75rem;
+  align-self: flex-start;
+}
 
 /*  SECTION: Loading State  */
 .tb-loading {
