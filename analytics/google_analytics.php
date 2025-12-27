@@ -1,0 +1,171 @@
+<?php
+/*  FILE: analytics/google_analytics.php
+    SECTION: Google Analytics Data Fetch & Render
+------------------------------------------------------------*/
+
+$apiKey = getenv('GA_API_KEY') ?: (defined('GA_API_KEY') ? GA_API_KEY : null);
+$propertyId = getenv('GA_PROPERTY_ID') ?: (defined('GA_PROPERTY_ID') ? GA_PROPERTY_ID : null);
+$gaClientId = getenv('GA_CLIENT_ID') ?: (defined('GA_CLIENT_ID') ? GA_CLIENT_ID : null);
+$gaClientSecret = getenv('GA_CLIENT_SECRET') ?: (defined('GA_CLIENT_SECRET') ? GA_CLIENT_SECRET : null);
+$gaRefreshToken = getenv('GA_REFRESH_TOKEN') ?: (defined('GA_REFRESH_TOKEN') ? GA_REFRESH_TOKEN : null);
+
+function ga_fetch_access_token($clientId, $clientSecret, $refreshToken) {
+    if (!$clientId || !$clientSecret || !$refreshToken) {
+        return ['token' => null, 'error' => 'Missing Google OAuth credentials.'];
+    }
+
+    $postFields = http_build_query([
+        'client_id' => $clientId,
+        'client_secret' => $clientSecret,
+        'refresh_token' => $refreshToken,
+        'grant_type' => 'refresh_token',
+    ]);
+
+    $ch = curl_init('https://oauth2.googleapis.com/token');
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $postFields,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded'],
+    ]);
+    $response = curl_exec($ch);
+    if ($response === false) {
+        $error = curl_error($ch);
+        curl_close($ch);
+        return ['token' => null, 'error' => $error];
+    }
+    $data = json_decode($response, true);
+    curl_close($ch);
+
+    if (!isset($data['access_token'])) {
+        return ['token' => null, 'error' => $data['error_description'] ?? 'Unable to refresh access token.'];
+    }
+
+    return ['token' => $data['access_token'], 'error' => null];
+}
+
+function ga_fetch_metric($propertyId, $metric, $startDate, $endDate, $accessToken = null, $apiKey = null) {
+    $apiUrl = "https://analyticsdata.googleapis.com/v1beta/properties/{$propertyId}:runReport";
+    if ($apiKey) {
+        $apiUrl .= '?key=' . urlencode($apiKey);
+    }
+    $payload = json_encode([
+        'dateRanges' => [
+            [
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+            ]
+        ],
+        'metrics' => [
+            ['name' => $metric],
+        ],
+    ]);
+
+    $headers = ['Content-Type: application/json'];
+    if ($accessToken) {
+        $headers[] = 'Authorization: Bearer ' . $accessToken;
+    }
+
+    $ch = curl_init($apiUrl);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    $response = curl_exec($ch);
+    $err = curl_error($ch);
+    curl_close($ch);
+
+    if ($err) {
+        return ['value' => null, 'error' => $err];
+    }
+
+    $data = json_decode($response, true);
+    if (isset($data['error'])) {
+        return ['value' => null, 'error' => $data['error']['message'] ?? 'Unknown API error'];
+    }
+
+    $value = $data['rows'][0]['metricValues'][0]['value'] ?? null;
+    return ['value' => $value, 'error' => null];
+}
+
+if (!$propertyId) {
+    echo '<p class="tb-error">Google Analytics is not configured.</p>';
+    echo '<p class="tb-coming-soon">Set GA_PROPERTY_ID in your environment or config.php.</p>';
+    return;
+}
+
+$accessToken = null;
+$tokenError = null;
+if ($gaClientId || $gaClientSecret || $gaRefreshToken) {
+    $tokenResult = ga_fetch_access_token($gaClientId, $gaClientSecret, $gaRefreshToken);
+    $accessToken = $tokenResult['token'];
+    $tokenError = $tokenResult['error'];
+}
+
+if (!$accessToken && !$apiKey) {
+    echo '<p class="tb-error">Google Analytics credentials are missing.</p>';
+    echo '<p class="tb-coming-soon">Provide GA_CLIENT_ID, GA_CLIENT_SECRET, GA_REFRESH_TOKEN (OAuth) or GA_API_KEY.</p>';
+    return;
+}
+
+$today = new DateTimeImmutable('today');
+$lastFiveYears = $today->modify('-5 years')->format('Y-m-d');
+$lastNinetyDays = $today->modify('-90 days')->format('Y-m-d');
+
+$lastMonthStart = (new DateTimeImmutable('first day of last month'))->format('Y-m-d');
+$lastMonthEnd = (new DateTimeImmutable('last day of last month'))->format('Y-m-d');
+
+$stats = [
+    [
+        'label' => 'Total Views (Last 5 Years)',
+        'start' => $lastFiveYears,
+        'end' => $today->format('Y-m-d'),
+    ],
+    [
+        'label' => 'Total Views (Last 90 Days)',
+        'start' => $lastNinetyDays,
+        'end' => $today->format('Y-m-d'),
+    ],
+    [
+        'label' => 'Total Views (Last Month)',
+        'start' => $lastMonthStart,
+        'end' => $lastMonthEnd,
+    ],
+];
+
+$errors = [];
+$values = [];
+foreach ($stats as $stat) {
+    $result = ga_fetch_metric($propertyId, 'screenPageViews', $stat['start'], $stat['end'], $accessToken, $apiKey);
+    if ($result['error']) {
+        $errors[] = $result['error'];
+        $values[] = null;
+    } else {
+        $values[] = $result['value'];
+    }
+}
+?>
+
+<?php if (!empty($errors)): ?>
+    <p class="tb-error">Unable to fetch Google Analytics data.</p>
+    <?php if ($tokenError): ?>
+        <p class="tb-coming-soon"><?php echo htmlspecialchars($tokenError); ?></p>
+    <?php else: ?>
+        <p class="tb-coming-soon">Check the GA credentials and property ID, then refresh.</p>
+    <?php endif; ?>
+<?php endif; ?>
+
+<div class="tb-stats-grid">
+    <?php foreach ($stats as $index => $stat): ?>
+        <div class="tb-stat-card">
+            <h3><?php echo htmlspecialchars($stat['label']); ?></h3>
+            <div class="tb-stat-value">
+                <?php if ($values[$index] !== null): ?>
+                    <?php echo number_format((int) $values[$index]); ?>
+                <?php else: ?>
+                    —
+                <?php endif; ?>
+            </div>
+        </div>
+    <?php endforeach; ?>
+</div>

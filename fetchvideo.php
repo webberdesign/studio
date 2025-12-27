@@ -20,23 +20,45 @@ if (!$videoId) {
 // Read API credentials from config.php (constants) or environment variables
 $apiKey    = defined('YOUTUBE_API_KEY') ? YOUTUBE_API_KEY : getenv('YOUTUBE_API_KEY');
 $channelId = defined('YOUTUBE_CHANNEL_ID') ? YOUTUBE_CHANNEL_ID : getenv('YOUTUBE_CHANNEL_ID');
-if (!$apiKey || !$channelId) {
-    echo 'YouTube API key or channel ID is not configured. Set YOUTUBE_API_KEY and YOUTUBE_CHANNEL_ID in config.php or environment variables.';
+
+// Get a fresh access token for the YouTube Analytics/Data APIs
+$userId      = 1;
+$accessToken = refreshToken($userId);
+
+if (!$accessToken && !$apiKey) {
+    echo 'YouTube credentials are not configured. Set OAuth tokens or YOUTUBE_API_KEY in config.php or environment variables.';
     exit;
 }
-
-// Get a fresh access token for the YouTube Analytics API
-$userId     = 1;
-$accessToken = refreshToken($userId);
 
 /*
  * Helper functions copied from the provided fetchvideo.php example.  These
  * functions emit HTML directly.  We wrap the output in our own markup below.
  */
 
-function fetchTotalViews($videoId, $apiKey) {
-    $apiUrl = "https://www.googleapis.com/youtube/v3/videos?part=statistics&id=$videoId&key=$apiKey";
-    $response = json_decode(file_get_contents($apiUrl), true);
+function tb_youtube_api_request($endpoint, array $params, $accessToken = null, $apiKey = null) {
+    if ($apiKey) {
+        $params['key'] = $apiKey;
+    }
+    $apiUrl = 'https://www.googleapis.com/youtube/v3/' . ltrim($endpoint, '/') . '?' . http_build_query($params);
+    $ch = curl_init($apiUrl);
+    $headers = [];
+    if ($accessToken) {
+        $headers[] = 'Authorization: Bearer ' . $accessToken;
+    }
+    if ($headers) {
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    }
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $response = curl_exec($ch);
+    curl_close($ch);
+    return json_decode($response, true);
+}
+
+function fetchTotalViews($videoId, $apiKey, $accessToken) {
+    $response = tb_youtube_api_request('videos', [
+        'part' => 'statistics',
+        'id' => $videoId,
+    ], $accessToken, $apiKey);
     if (isset($response['items'][0]['statistics']['viewCount'])) {
         $totalViews = $response['items'][0]['statistics']['viewCount'];
         $formattedTotalViews = number_format($totalViews);
@@ -99,9 +121,11 @@ function fetchUserActivityByProvince($accessToken, $videoId) {
     fetchAnalyticsData($accessToken, $videoId, 'province', 'Views by State', 15, 'country==US');
 }
 
-function fetchCurrentStatsDataAPI($apiKey, $videoId) {
-    $apiUrl  = "https://www.googleapis.com/youtube/v3/videos?part=statistics&id=$videoId&key=$apiKey";
-    $response = json_decode(file_get_contents($apiUrl), true);
+function fetchCurrentStatsDataAPI($apiKey, $videoId, $accessToken) {
+    $response = tb_youtube_api_request('videos', [
+        'part' => 'statistics',
+        'id' => $videoId,
+    ], $accessToken, $apiKey);
     if (isset($response['items'][0]['statistics'])) {
         $stats  = $response['items'][0]['statistics'];
         if (isset($stats['likeCount'])) {
@@ -115,9 +139,16 @@ function fetchCurrentStatsDataAPI($apiKey, $videoId) {
     }
 }
 
-function fetchSubscriberCount($apiKey, $channelId) {
-    $apiUrl  = "https://www.googleapis.com/youtube/v3/channels?part=statistics&id=$channelId&key=$apiKey";
-    $response = json_decode(file_get_contents($apiUrl), true);
+function fetchSubscriberCount($apiKey, $channelId, $accessToken) {
+    $params = [
+        'part' => 'statistics',
+    ];
+    if ($channelId) {
+        $params['id'] = $channelId;
+    } else {
+        $params['mine'] = 'true';
+    }
+    $response = tb_youtube_api_request('channels', $params, $accessToken, $apiKey);
     if (isset($response['items'][0]['statistics']['subscriberCount'])) {
         $subscribers = $response['items'][0]['statistics']['subscriberCount'];
         echo '<p><strong>Subscribers:</strong> ' . number_format($subscribers) . '</p>';
@@ -136,9 +167,11 @@ function displayVideoThumbnail($videoId) {
     echo '</div>';
 }
 
-function fetchVideoTitle($apiKey, $videoId) {
-    $apiUrl  = "https://www.googleapis.com/youtube/v3/videos?id=$videoId&part=snippet&key=$apiKey";
-    $response = json_decode(file_get_contents($apiUrl), true);
+function fetchVideoTitle($apiKey, $videoId, $accessToken) {
+    $response = tb_youtube_api_request('videos', [
+        'id' => $videoId,
+        'part' => 'snippet',
+    ], $accessToken, $apiKey);
     if (isset($response['items'][0]['snippet']['title'])) {
         $videoTitle = $response['items'][0]['snippet']['title'];
         echo '<h2>' . htmlspecialchars($videoTitle) . '</h2>';
@@ -226,16 +259,16 @@ function fetchViewCompletionMetrics($accessToken, $videoId) {
             <h1 class="tb-title">Video Analytics</h1>
             <?php
             // Display video title and thumbnail
-            fetchVideoTitle($apiKey, $videoId);
+            fetchVideoTitle($apiKey, $videoId, $accessToken);
             displayVideoThumbnail($videoId);
             ?>
             <div class="tb-analytics-box">
                 <?php
                 // Overall statistics: views, likes, comments, subscribers
-                fetchTotalViews($videoId, $apiKey);
+                fetchTotalViews($videoId, $apiKey, $accessToken);
                 fetchViewCompletionMetrics($accessToken, $videoId);
-                fetchCurrentStatsDataAPI($apiKey, $videoId);
-                fetchSubscriberCount($apiKey, $channelId);
+                fetchCurrentStatsDataAPI($apiKey, $videoId, $accessToken);
+                fetchSubscriberCount($apiKey, $channelId, $accessToken);
                 ?>
             </div>
             <div class="tb-analytics-box">
