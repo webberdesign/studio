@@ -44,7 +44,7 @@ function ga_fetch_access_token($clientId, $clientSecret, $refreshToken) {
     return ['token' => $data['access_token'], 'error' => null];
 }
 
-function ga_fetch_report($propertyId, array $metrics, array $dimensions, $startDate, $endDate, $accessToken = null, $apiKey = null, $limit = null, $orderBys = []) {
+function ga_fetch_report($propertyId, array $metrics, array $dimensions, $startDate, $endDate, $accessToken = null, $apiKey = null, $limit = null, $orderBys = [], $dimensionFilter = null) {
     $apiUrl = "https://analyticsdata.googleapis.com/v1beta/properties/{$propertyId}:runReport";
     if ($apiKey) {
         $apiUrl .= '?key=' . urlencode($apiKey);
@@ -69,6 +69,10 @@ function ga_fetch_report($propertyId, array $metrics, array $dimensions, $startD
 
     if (!empty($orderBys)) {
         $payload['orderBys'] = $orderBys;
+    }
+
+    if ($dimensionFilter) {
+        $payload['dimensionFilter'] = $dimensionFilter;
     }
 
     $payload = json_encode($payload);
@@ -155,6 +159,24 @@ $stats = [
 
 $analyticsStart = '2021-01-01';
 $analyticsEnd = $today->format('Y-m-d');
+$yearlyReport = ga_fetch_report(
+    $propertyId,
+    ['screenPageViews'],
+    ['year'],
+    $analyticsStart,
+    $analyticsEnd,
+    $accessToken,
+    $apiKey,
+    null,
+    [
+        [
+            'dimension' => [
+                'dimensionName' => 'year',
+            ],
+            'desc' => false,
+        ],
+    ]
+);
 $topCountryReport = ga_fetch_report(
     $propertyId,
     ['screenPageViews'],
@@ -201,7 +223,7 @@ $referrerReport = ga_fetch_report(
     $analyticsEnd,
     $accessToken,
     $apiKey,
-    8,
+    12,
     [
         [
             'metric' => [
@@ -227,6 +249,17 @@ $pageReport = ga_fetch_report(
                 'metricName' => 'screenPageViews',
             ],
             'desc' => true,
+        ],
+    ],
+    [
+        'notExpression' => [
+            'filter' => [
+                'fieldName' => 'pagePath',
+                'stringFilter' => [
+                    'matchType' => 'EXACT',
+                    'value' => '/firestone-park/firestone-pool/',
+                ],
+            ],
         ],
     ]
 );
@@ -302,6 +335,33 @@ foreach ($stats as $stat) {
                     —
                 <?php endif; ?>
             </div>
+        </div>
+    <?php endforeach; ?>
+</div>
+
+<?php
+$yearlyViews = [
+    '2021' => 0,
+    '2022' => 0,
+    '2023' => 0,
+    '2024' => 0,
+    '2025' => 0,
+];
+if (!empty($yearlyReport['rows'])) {
+    foreach ($yearlyReport['rows'] as $row) {
+        $year = $row['dimensionValues'][0]['value'] ?? null;
+        if ($year && array_key_exists($year, $yearlyViews)) {
+            $yearlyViews[$year] = (int) ($row['metricValues'][0]['value'] ?? 0);
+        }
+    }
+}
+?>
+
+<div class="tb-stats-grid tb-stats-grid--three">
+    <?php foreach ($yearlyViews as $year => $views): ?>
+        <div class="tb-stat-card tb-stat-card--large">
+            <h3><?php echo htmlspecialchars($year); ?> Views</h3>
+            <div class="tb-stat-value"><?php echo number_format($views); ?></div>
         </div>
     <?php endforeach; ?>
 </div>

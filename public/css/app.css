@@ -1608,6 +1608,13 @@ body.tb-body {
   font-size: 1.6rem;
   font-weight: 700;
 }
+.tb-stat-card.tb-stat-card--large .tb-stat-value {
+  font-size: 1.9rem;
+  font-weight: 700;
+}
+.tb-stat-card.tb-stat-card--large h3 {
+  font-size: 1rem;
+}
 .tb-stat-card.is-disabled {
   opacity: 0.45;
   filter: grayscale(0.9);
