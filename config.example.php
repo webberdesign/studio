@@ -23,6 +23,15 @@ try {
 
 define('GA_API_KEY', 'your-ga-api-key-here');
 define('GA_PROPERTY_ID', 'your-ga4-property-id-here');
+define('GA_CLIENT_ID', 'your-google-oauth-client-id-here');
+define('GA_CLIENT_SECRET', 'your-google-oauth-client-secret-here');
+define('GA_REFRESH_TOKEN', 'your-google-oauth-refresh-token-here');
+
+define('YOUTUBE_API_KEY', 'your-youtube-api-key-here');
+define('YOUTUBE_CHANNEL_ID', 'your-youtube-channel-id-here');
+define('YOUTUBE_CLIENT_ID', 'your-youtube-oauth-client-id-here');
+define('YOUTUBE_CLIENT_SECRET', 'your-youtube-oauth-client-secret-here');
+define('YOUTUBE_REFRESH_TOKEN', 'your-youtube-oauth-refresh-token-here');
 
 function tb_is_admin() {
     return !empty($_SESSION['tb_admin']);
