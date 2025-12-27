@@ -237,6 +237,7 @@ function fetchViewCompletionMetrics($accessToken, $videoId) {
             <i class="fas fa-film"></i> Videos
         </a>
         <a href="index.php?page=music"><i class="fas fa-music"></i> Music</a>
+        <a href="index.php?page=feed"><i class="fas fa-newspaper"></i> Feed</a>
         <a href="index.php?page=analytics" class="active"><i class="fas fa-chart-line"></i> Analytics</a>
         <a href="index.php?page=settings"><i class="fas fa-gear"></i> Settings</a>
     </nav>
@@ -256,6 +257,7 @@ function fetchViewCompletionMetrics($accessToken, $videoId) {
     <!-- Main content -->
     <main class="tb-main">
         <section class="tb-section">
+            <a href="index.php?page=analytics" class="tb-btn-secondary tb-back-link"><i class="fas fa-arrow-left"></i> Back to Analytics</a>
             <h1 class="tb-title">Video Analytics</h1>
             <?php
             // Display video title and thumbnail
@@ -290,6 +292,7 @@ function fetchViewCompletionMetrics($accessToken, $videoId) {
     <nav class="tb-bottom-nav">
         <a href="index.php?page=videos" class="tb-bottom-item"><i class="fas fa-film"></i><span>Videos</span></a>
         <a href="index.php?page=music" class="tb-bottom-item"><i class="fas fa-music"></i><span>Music</span></a>
+        <a href="index.php?page=feed" class="tb-bottom-item"><i class="fas fa-newspaper"></i><span>Feed</span></a>
         <a href="index.php?page=analytics" class="tb-bottom-item active"><i class="fas fa-chart-line"></i><span>Analytics</span></a>
     </nav>
 </div>

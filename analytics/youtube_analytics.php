@@ -215,8 +215,6 @@ $genderBreakdown = $accessToken ? fetchChannelDemographics($accessToken, 'gender
         <?php else: ?>
           <p class="tb-muted">Age group data requires OAuth access.</p>
         <?php endif; ?>
-      </div>
-      <div class="tb-analytics-box">
         <h3>Viewer Gender</h3>
         <?php if (!empty($genderBreakdown)): ?>
           <ol class="tb-top-list">
@@ -243,10 +241,26 @@ $genderBreakdown = $accessToken ? fetchChannelDemographics($accessToken, 'gender
         $thumbnailUrl = $item['snippet']['thumbnails']['medium']['url'];
     ?>
         <div class="video">
-            <a href="fetchvideo.php?videoID=<?php echo htmlspecialchars($videoId); ?>">
+            <a href="fetchvideo.php?videoID=<?php echo htmlspecialchars($videoId); ?>" class="tb-fetchvideo-link">
                 <img src="<?php echo htmlspecialchars($thumbnailUrl); ?>" alt="<?php echo htmlspecialchars($title); ?>">
                 <h2><?php echo htmlspecialchars($title); ?></h2>
             </a>
         </div>
     <?php endforeach; ?>
 </div>
+
+<div id="tbFetchVideoLoading" class="tb-loading-overlay" aria-hidden="true">
+    <div class="tb-loading">Loading Video Analytics…</div>
+</div>
+
+<script>
+  document.querySelectorAll('.tb-fetchvideo-link').forEach(link => {
+    link.addEventListener('click', () => {
+      const overlay = document.getElementById('tbFetchVideoLoading');
+      if (overlay) {
+        overlay.classList.add('active');
+        overlay.setAttribute('aria-hidden', 'false');
+      }
+    });
+  });
+</script>
