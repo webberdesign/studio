@@ -32,7 +32,7 @@ const initTracklistPlayer = (container) => {
   const coverImg = player.querySelector("[data-track-cover]");
   const playIcon = playBtn ? playBtn.querySelector("svg path") : null;
 
-  let currentIndex = 0;
+  let currentIndex = null;
   let isPlaying = false;
   const audio = new Audio();
 
@@ -61,19 +61,38 @@ const initTracklistPlayer = (container) => {
     if (index < 0 || index >= tracks.length) return;
     currentIndex = index;
     const track = tracks[currentIndex];
-    if (!track || !track.src) return;
+    if (!track) return;
     audio.src = track.src;
-    audio.load();
+    if (track.src) {
+      audio.load();
+    }
     updatePlayerInfo();
+  };
+
+  const findPlayableIndex = (startIndex, direction) => {
+    if (!tracks.length) return null;
+    let index = startIndex;
+    for (let i = 0; i < tracks.length; i += 1) {
+      const track = tracks[index];
+      if (track && track.src) {
+        return index;
+      }
+      index = (index + direction + tracks.length) % tracks.length;
+    }
+    return null;
   };
 
   const play = () => {
     if (!tracks.length) return;
-    if (!audio.src) {
-      loadTrack(currentIndex);
+    if (currentIndex === null) {
+      const firstPlayable = findPlayableIndex(0, 1);
+      if (firstPlayable === null) return;
+      loadTrack(firstPlayable);
     }
+    if (!audio.src) return;
     audio.play();
     isPlaying = true;
+    player.classList.remove("is-hidden");
     updatePlayIcon(true);
     updateRows();
   };
@@ -94,14 +113,18 @@ const initTracklistPlayer = (container) => {
   };
 
   const nextTrack = () => {
-    currentIndex = (currentIndex + 1) % tracks.length;
-    loadTrack(currentIndex);
+    const startIndex = currentIndex === null ? 0 : currentIndex + 1;
+    const nextIndex = findPlayableIndex(startIndex % tracks.length, 1);
+    if (nextIndex === null) return;
+    loadTrack(nextIndex);
     if (isPlaying) play();
   };
 
   const prevTrack = () => {
-    currentIndex = (currentIndex - 1 + tracks.length) % tracks.length;
-    loadTrack(currentIndex);
+    const startIndex = currentIndex === null ? tracks.length - 1 : currentIndex - 1;
+    const prevIndex = findPlayableIndex((startIndex + tracks.length) % tracks.length, -1);
+    if (prevIndex === null) return;
+    loadTrack(prevIndex);
     if (isPlaying) play();
   };
 
@@ -115,6 +138,9 @@ const initTracklistPlayer = (container) => {
       const index = Number(row.dataset.trackIndex);
       if (Number.isNaN(index)) return;
       loadTrack(index);
+      if (!tracks[index] || !tracks[index].src) {
+        return;
+      }
       play();
     });
   });
@@ -128,8 +154,8 @@ const initTracklistPlayer = (container) => {
     play();
   });
 
-  loadTrack(0);
   updatePlayIcon(false);
+  updateRows();
 };
 
 document.addEventListener("DOMContentLoaded", () => {

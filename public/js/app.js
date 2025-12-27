@@ -72,7 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const songsToggle = document.getElementById('tbSongsToggle');
   const songsUnreleased = document.getElementById('tbSongsUnreleased');
   const songsReleased = document.getElementById('tbSongsReleased');
-  if (songsToggle && songsUnreleased && songsReleased) {
+  const songsCollections = document.getElementById('tbSongsCollections');
+  if (songsToggle && songsUnreleased && songsReleased && songsCollections) {
     songsToggle.addEventListener('click', (e) => {
       // find the button with data-target on click; could be nested inside
       const btn = e.target.closest('button[data-target]');
@@ -82,6 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('active');
       songsUnreleased.classList.toggle('active', target === 'unreleased');
       songsReleased.classList.toggle('active', target === 'released');
+      songsCollections.classList.toggle('active', target === 'collections');
     });
   }
 

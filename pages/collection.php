@@ -22,23 +22,21 @@ if (!$collection) {
 // Determine theme for body class
 $currentTheme = tb_get_theme();
 
-// Fetch tracks for this collection (released only)
-$stmt = $pdo->prepare("SELECT * FROM tb_songs WHERE collection_id = ? AND is_released = 1 ORDER BY position ASC, created_at DESC");
+// Fetch tracks for this collection
+$stmt = $pdo->prepare("SELECT * FROM tb_songs WHERE collection_id = ? ORDER BY position ASC, created_at DESC");
 $stmt->execute([$collectionId]);
 $collectionTracks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $placeholderCover = 'assets/icons/icon-192.png';
 $trackItems = [];
 foreach ($collectionTracks as $track) {
-    if (!empty($track['mp3_path'])) {
-        $trackItems[] = [
-            'title' => $track['title'],
-            'src' => $track['mp3_path'],
-            'cover' => !empty($track['cover_path']) ? $track['cover_path'] : $placeholderCover,
-        ];
-    }
+    $trackItems[] = [
+        'title' => $track['title'],
+        'src' => $track['mp3_path'] ?? '',
+        'cover' => !empty($track['cover_path']) ? $track['cover_path'] : $placeholderCover,
+    ];
 }
-$trackCount = count($trackItems);
+$trackCount = count($collectionTracks);
 $coverImage = !empty($collection['cover_path']) ? $collection['cover_path'] : $placeholderCover;
 $trackItemsJson = htmlspecialchars(json_encode($trackItems), ENT_QUOTES, 'UTF-8');
 ?>
@@ -54,16 +52,21 @@ $trackItemsJson = htmlspecialchars(json_encode($trackItems), ENT_QUOTES, 'UTF-8'
             </div>
         </div>
 
-        <?php if (!empty($trackItems)): ?>
+        <?php if (!empty($collectionTracks)): ?>
             <div class="tb-tracklist-rows">
-                <?php foreach ($trackItems as $index => $track): ?>
+                <?php foreach ($collectionTracks as $index => $track): ?>
                     <button type="button" class="tb-track-row" data-track-index="<?php echo $index; ?>">
-                        <span class="tb-track-number"><?php echo str_pad($index + 1, 2, '0', STR_PAD_LEFT); ?></span>
-                        <span class="tb-track-title"><?php echo htmlspecialchars($track['title']); ?></span>
+                        <span class="tb-track-cover-wrap">
+                            <img src="<?php echo htmlspecialchars(!empty($track['cover_path']) ? $track['cover_path'] : $placeholderCover); ?>" alt="" class="tb-track-cover<?php echo empty($track['cover_path']) ? ' is-placeholder' : ''; ?>">
+                        </span>
+                        <span class="tb-track-main">
+                            <span class="tb-track-number"><?php echo str_pad($index + 1, 2, '0', STR_PAD_LEFT); ?></span>
+                            <span class="tb-track-title"><?php echo htmlspecialchars($track['title']); ?></span>
+                        </span>
                     </button>
                 <?php endforeach; ?>
             </div>
-            <div class="tb-track-player" data-track-player>
+            <div class="tb-track-player is-hidden" data-track-player>
                 <div class="tb-track-player-info">
                     <img src="<?php echo htmlspecialchars($coverImage); ?>" alt="" class="tb-track-player-cover" data-track-cover>
                     <div>

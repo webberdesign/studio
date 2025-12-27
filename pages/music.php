@@ -35,16 +35,15 @@ foreach ($unreleased as $song) {
     if (!empty($song['cover_path']) && $unreleasedCover === $placeholderCover) {
         $unreleasedCover = $song['cover_path'];
     }
-    if (!empty($song['mp3_path'])) {
-        $unreleasedTrackItems[] = [
-            'title' => $song['title'],
-            'src' => $song['mp3_path'],
-            'cover' => !empty($song['cover_path']) ? $song['cover_path'] : $placeholderCover,
-        ];
-    }
+    $unreleasedTrackItems[] = [
+        'title' => $song['title'],
+        'src' => $song['mp3_path'] ?? '',
+        'cover' => !empty($song['cover_path']) ? $song['cover_path'] : $placeholderCover,
+        'has_cover' => !empty($song['cover_path']),
+    ];
 }
 $unreleasedTrackItemsJson = htmlspecialchars(json_encode($unreleasedTrackItems), ENT_QUOTES, 'UTF-8');
-$unreleasedTrackCount = count($unreleasedTrackItems);
+$unreleasedTrackCount = count($unreleased);
 
 // Build data for released tracklist player
 $releasedTrackItems = [];
@@ -53,18 +52,17 @@ foreach ($releasedSongs as $song) {
     if (!empty($song['cover_path']) && $releasedCover === $placeholderCover) {
         $releasedCover = $song['cover_path'];
     }
-    if (!empty($song['mp3_path'])) {
-        $releasedTrackItems[] = [
-            'title' => $song['title'],
-            'src' => $song['mp3_path'],
-            'cover' => !empty($song['cover_path']) ? $song['cover_path'] : $placeholderCover,
-            'apple' => $song['apple_music_url'] ?? '',
-            'spotify' => $song['spotify_url'] ?? '',
-        ];
-    }
+    $releasedTrackItems[] = [
+        'title' => $song['title'],
+        'src' => $song['mp3_path'] ?? '',
+        'cover' => !empty($song['cover_path']) ? $song['cover_path'] : $placeholderCover,
+        'has_cover' => !empty($song['cover_path']),
+        'apple' => $song['apple_music_url'] ?? '',
+        'spotify' => $song['spotify_url'] ?? '',
+    ];
 }
 $releasedTrackItemsJson = htmlspecialchars(json_encode($releasedTrackItems), ENT_QUOTES, 'UTF-8');
-$releasedTrackCount = count($releasedTrackItems);
+$releasedTrackCount = count($releasedSongs);
 
 // Fetch collections for display on the music page
 $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
@@ -74,32 +72,15 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
     <h1 class="tb-title">Music</h1>
     <p class="tb-subtitle">Take a listen to our unreleased demos or groove to what’s out now.</p>
 
-    <!-- SECTION: Collections / Albums -->
-    <?php if (!empty($collections)): ?>
-    <h2 style="margin-top:0.5rem; font-size:1.1rem;">Albums</h2>
-    <div class="tb-card-grid" style="margin-bottom:1rem;">
-        <?php foreach ($collections as $c): ?>
-        <?php $cover = !empty($c['cover_path']) ? $c['cover_path'] : $placeholderCover; ?>
-        <a href="?page=collection&amp;id=<?php echo $c['id']; ?>" class="tb-card" style="text-decoration:none;">
-            <img src="<?php echo htmlspecialchars($cover); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="tb-card-thumb">
-            <div class="tb-card-body">
-                <h3 class="tb-card-title" style="font-size:0.95rem; margin:0; color:inherit;">
-                    <?php echo htmlspecialchars($c['name']); ?>
-                </h3>
-            </div>
-        </a>
-        <?php endforeach; ?>
-    </div>
-    <?php endif; ?>
-
-    <!-- SECTION: Toggle between unreleased and released songs -->
+    <!-- SECTION: Toggle between released, unreleased, and collections -->
     <div class="tb-toggle-pill" id="tbSongsToggle">
-        <button type="button" class="active" data-target="unreleased">Unreleased</button>
-        <button type="button" data-target="released">Released</button>
+        <button type="button" class="active" data-target="released">Released</button>
+        <button type="button" data-target="unreleased">Unreleased</button>
+        <button type="button" data-target="collections">Collections</button>
     </div>
 
     <!-- Unreleased Songs -->
-    <div id="tbSongsUnreleased" class="tb-songs-pane active tb-tracklist-pane">
+    <div id="tbSongsUnreleased" class="tb-songs-pane tb-tracklist-pane">
         <div class="tb-tracklist" data-tracklist data-tracks="<?php echo $unreleasedTrackItemsJson; ?>">
             <div class="tb-tracklist-header">
                 <img src="<?php echo htmlspecialchars($unreleasedCover); ?>" alt="Unreleased cover" class="tb-tracklist-cover">
@@ -110,16 +91,21 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
                 </div>
             </div>
 
-            <?php if (!empty($unreleasedTrackItems)): ?>
+            <?php if (!empty($unreleased)): ?>
                 <div class="tb-tracklist-rows">
                     <?php foreach ($unreleasedTrackItems as $index => $track): ?>
                         <button type="button" class="tb-track-row" data-track-index="<?php echo $index; ?>">
-                            <span class="tb-track-number"><?php echo str_pad($index + 1, 2, '0', STR_PAD_LEFT); ?></span>
-                            <span class="tb-track-title"><?php echo htmlspecialchars($track['title']); ?></span>
+                            <span class="tb-track-cover-wrap">
+                                <img src="<?php echo htmlspecialchars($track['cover']); ?>" alt="" class="tb-track-cover<?php echo empty($track['has_cover']) ? ' is-placeholder' : ''; ?>">
+                            </span>
+                            <span class="tb-track-main">
+                                <span class="tb-track-number"><?php echo str_pad($index + 1, 2, '0', STR_PAD_LEFT); ?></span>
+                                <span class="tb-track-title"><?php echo htmlspecialchars($track['title']); ?></span>
+                            </span>
                         </button>
                     <?php endforeach; ?>
                 </div>
-                <div class="tb-track-player" data-track-player>
+                <div class="tb-track-player is-hidden" data-track-player>
                     <div class="tb-track-player-info">
                         <img src="<?php echo htmlspecialchars($unreleasedCover); ?>" alt="" class="tb-track-player-cover" data-track-cover>
                         <div>
@@ -146,7 +132,7 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
     </div>
 
     <!-- Released Songs -->
-    <div id="tbSongsReleased" class="tb-songs-pane tb-tracklist-pane">
+    <div id="tbSongsReleased" class="tb-songs-pane active tb-tracklist-pane">
         <div class="tb-tracklist" data-tracklist data-tracks="<?php echo $releasedTrackItemsJson; ?>">
             <div class="tb-tracklist-header">
                 <img src="<?php echo htmlspecialchars($releasedCover); ?>" alt="Released cover" class="tb-tracklist-cover">
@@ -157,11 +143,14 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
                 </div>
             </div>
 
-            <?php if (!empty($releasedTrackItems)): ?>
+            <?php if (!empty($releasedSongs)): ?>
                 <div class="tb-tracklist-rows">
                     <?php foreach ($releasedTrackItems as $index => $track): ?>
                         <div class="tb-track-row" data-track-index="<?php echo $index; ?>">
                             <div class="tb-track-main">
+                                <span class="tb-track-cover-wrap">
+                                    <img src="<?php echo htmlspecialchars($track['cover']); ?>" alt="" class="tb-track-cover<?php echo empty($track['has_cover']) ? ' is-placeholder' : ''; ?>">
+                                </span>
                                 <span class="tb-track-number"><?php echo str_pad($index + 1, 2, '0', STR_PAD_LEFT); ?></span>
                                 <span class="tb-track-title"><?php echo htmlspecialchars($track['title']); ?></span>
                             </div>
@@ -180,7 +169,7 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
                         </div>
                     <?php endforeach; ?>
                 </div>
-                <div class="tb-track-player" data-track-player>
+                <div class="tb-track-player is-hidden" data-track-player>
                     <div class="tb-track-player-info">
                         <img src="<?php echo htmlspecialchars($releasedCover); ?>" alt="" class="tb-track-player-cover" data-track-cover>
                         <div>
@@ -204,5 +193,29 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
                 <p class="tb-empty">No released tracks yet.</p>
             <?php endif; ?>
         </div>
+    </div>
+
+    <!-- Collections -->
+    <div id="tbSongsCollections" class="tb-songs-pane tb-tracklist-pane">
+        <?php if (!empty($collections)): ?>
+            <div class="tb-card-grid" style="margin-bottom:1rem;">
+                <?php foreach ($collections as $c): ?>
+                    <?php
+                    $cover = !empty($c['cover_path']) ? $c['cover_path'] : $placeholderCover;
+                    $coverClass = !empty($c['cover_path']) ? '' : ' is-placeholder';
+                    ?>
+                    <a href="?page=collection&amp;id=<?php echo $c['id']; ?>" class="tb-card" style="text-decoration:none;">
+                        <img src="<?php echo htmlspecialchars($cover); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="tb-card-thumb tb-collection-cover<?php echo $coverClass; ?>">
+                        <div class="tb-card-body">
+                            <h3 class="tb-card-title" style="font-size:0.95rem; margin:0; color:inherit;">
+                                <?php echo htmlspecialchars($c['name']); ?>
+                            </h3>
+                        </div>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
+            <p class="tb-empty">No collections yet.</p>
+        <?php endif; ?>
     </div>
 </section>
