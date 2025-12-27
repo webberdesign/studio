@@ -33,6 +33,9 @@ require_once __DIR__ . '/../config.php';
     <div id="tbAnalyticsLoading" class="tb-loading-overlay" aria-hidden="true">
         <div class="tb-loading">Loading Analytics…</div>
     </div>
+    <div id="tbAnalyticsLoading" class="tb-loading-overlay" aria-hidden="true">
+        <div class="tb-loading">Loading Latest Analytics…</div>
+    </div>
 </section>
 <script>
   document.querySelectorAll('.tb-analytics-link').forEach(link => {

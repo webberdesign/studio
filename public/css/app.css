@@ -1582,6 +1582,32 @@ body.tb-body {
   gap: 0.35rem;
   font-size: 0.9rem;
 }
+
+.tb-feed-form input,
+.tb-feed-form textarea,
+.tb-feed-comment-form textarea {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--tb-border);
+  background: var(--tb-bg-elevated);
+  color: var(--tb-text);
+  padding: 0.65rem 0.85rem;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tb-feed-form input:focus,
+.tb-feed-form textarea:focus,
+.tb-feed-comment-form textarea:focus {
+  outline: none;
+  border-color: rgba(249, 115, 22, 0.65);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+}
+
+.tb-feed-form input[type="file"] {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.95rem;
+}
 .tb-feed-list {
   display: grid;
   gap: 1.25rem;

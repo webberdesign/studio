@@ -8,7 +8,7 @@ require_once __DIR__ . '/../config.php';
     <h1 class="tb-title">YouTube Analytics</h1>
     <p class="tb-subtitle">Real-time insights from our YouTube channel</p>
     
-    <div id="yt-loading" class="tb-loading">Loading YouTube data…</div>
+    <div id="yt-loading" class="tb-loading">Loading Latest Analytics…</div>
     <div id="yt-content" style="display:none;">
         <?php include __DIR__ . '/../analytics/youtube_analytics.php'; ?>
     </div>

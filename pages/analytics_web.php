@@ -7,7 +7,7 @@ require_once __DIR__ . '/../config.php';
 <section class="tb-section">
     <h1 class="tb-title">Titty Bingo Website</h1>
     <p class="tb-subtitle">Google Analytics totals for the website.</p>
-    <div id="ga-loading" class="tb-loading">Loading Google Analytics data…</div>
+    <div id="ga-loading" class="tb-loading">Loading Latest Analytics…</div>
     <div id="ga-content" style="display:none;">
         <?php include __DIR__ . '/../analytics/google_analytics.php'; ?>
     </div>
