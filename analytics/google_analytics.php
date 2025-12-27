@@ -44,22 +44,34 @@ function ga_fetch_access_token($clientId, $clientSecret, $refreshToken) {
     return ['token' => $data['access_token'], 'error' => null];
 }
 
-function ga_fetch_metric($propertyId, $metric, $startDate, $endDate, $accessToken = null, $apiKey = null) {
+function ga_fetch_report($propertyId, array $metrics, array $dimensions, $startDate, $endDate, $accessToken = null, $apiKey = null, $limit = null, $orderBys = []) {
     $apiUrl = "https://analyticsdata.googleapis.com/v1beta/properties/{$propertyId}:runReport";
     if ($apiKey) {
         $apiUrl .= '?key=' . urlencode($apiKey);
     }
-    $payload = json_encode([
+    $payload = [
         'dateRanges' => [
             [
                 'startDate' => $startDate,
                 'endDate' => $endDate,
             ]
         ],
-        'metrics' => [
-            ['name' => $metric],
-        ],
-    ]);
+        'metrics' => array_map(fn($metric) => ['name' => $metric], $metrics),
+    ];
+
+    if (!empty($dimensions)) {
+        $payload['dimensions'] = array_map(fn($dimension) => ['name' => $dimension], $dimensions);
+    }
+
+    if ($limit) {
+        $payload['limit'] = (string) $limit;
+    }
+
+    if (!empty($orderBys)) {
+        $payload['orderBys'] = $orderBys;
+    }
+
+    $payload = json_encode($payload);
 
     $headers = ['Content-Type: application/json'];
     if ($accessToken) {
@@ -84,7 +96,15 @@ function ga_fetch_metric($propertyId, $metric, $startDate, $endDate, $accessToke
         return ['value' => null, 'error' => $data['error']['message'] ?? 'Unknown API error'];
     }
 
-    $value = $data['rows'][0]['metricValues'][0]['value'] ?? null;
+    return ['rows' => $data['rows'] ?? [], 'error' => null];
+}
+
+function ga_fetch_metric($propertyId, $metric, $startDate, $endDate, $accessToken = null, $apiKey = null) {
+    $result = ga_fetch_report($propertyId, [$metric], [], $startDate, $endDate, $accessToken, $apiKey);
+    if ($result['error']) {
+        return ['value' => null, 'error' => $result['error']];
+    }
+    $value = $result['rows'][0]['metricValues'][0]['value'] ?? null;
     return ['value' => $value, 'error' => null];
 }
 
@@ -133,6 +153,84 @@ $stats = [
     ],
 ];
 
+$analyticsStart = '2021-01-01';
+$analyticsEnd = $today->format('Y-m-d');
+$topCountryReport = ga_fetch_report(
+    $propertyId,
+    ['screenPageViews'],
+    ['country'],
+    $analyticsStart,
+    $analyticsEnd,
+    $accessToken,
+    $apiKey,
+    10,
+    [
+        [
+            'metric' => [
+                'metricName' => 'screenPageViews',
+            ],
+            'desc' => true,
+        ],
+    ]
+);
+
+$topCityReport = ga_fetch_report(
+    $propertyId,
+    ['screenPageViews'],
+    ['city'],
+    $analyticsStart,
+    $analyticsEnd,
+    $accessToken,
+    $apiKey,
+    10,
+    [
+        [
+            'metric' => [
+                'metricName' => 'screenPageViews',
+            ],
+            'desc' => true,
+        ],
+    ]
+);
+
+$genderReport = ga_fetch_report(
+    $propertyId,
+    ['screenPageViews'],
+    ['gender'],
+    $analyticsStart,
+    $analyticsEnd,
+    $accessToken,
+    $apiKey,
+    6,
+    [
+        [
+            'metric' => [
+                'metricName' => 'screenPageViews',
+            ],
+            'desc' => true,
+        ],
+    ]
+);
+
+$ageReport = ga_fetch_report(
+    $propertyId,
+    ['screenPageViews'],
+    ['ageBracket'],
+    $analyticsStart,
+    $analyticsEnd,
+    $accessToken,
+    $apiKey,
+    6,
+    [
+        [
+            'metric' => [
+                'metricName' => 'screenPageViews',
+            ],
+            'desc' => true,
+        ],
+    ]
+);
+
 $errors = [];
 $values = [];
 foreach ($stats as $stat) {
@@ -155,7 +253,7 @@ foreach ($stats as $stat) {
     <?php endif; ?>
 <?php endif; ?>
 
-<div class="tb-stats-grid">
+<div class="tb-stats-grid tb-stats-grid--three">
     <?php foreach ($stats as $index => $stat): ?>
         <div class="tb-stat-card">
             <h3><?php echo htmlspecialchars($stat['label']); ?></h3>
@@ -168,4 +266,55 @@ foreach ($stats as $stat) {
             </div>
         </div>
     <?php endforeach; ?>
+</div>
+
+<div class="tb-analytics-grid">
+    <div class="tb-analytics-box">
+        <h3>Top Countries (2021–Present)</h3>
+        <?php if (!empty($topCountryReport['rows'])): ?>
+            <ol class="tb-top-list">
+                <?php foreach ($topCountryReport['rows'] as $row): ?>
+                    <li><?php echo htmlspecialchars($row['dimensionValues'][0]['value'] ?? 'Unknown'); ?> – <?php echo number_format((int) ($row['metricValues'][0]['value'] ?? 0)); ?> views</li>
+                <?php endforeach; ?>
+            </ol>
+        <?php else: ?>
+            <p class="tb-muted">No country data available yet.</p>
+        <?php endif; ?>
+    </div>
+    <div class="tb-analytics-box">
+        <h3>Top Cities (2021–Present)</h3>
+        <?php if (!empty($topCityReport['rows'])): ?>
+            <ol class="tb-top-list">
+                <?php foreach ($topCityReport['rows'] as $row): ?>
+                    <li><?php echo htmlspecialchars($row['dimensionValues'][0]['value'] ?? 'Unknown'); ?> – <?php echo number_format((int) ($row['metricValues'][0]['value'] ?? 0)); ?> views</li>
+                <?php endforeach; ?>
+            </ol>
+        <?php else: ?>
+            <p class="tb-muted">No city data available yet.</p>
+        <?php endif; ?>
+    </div>
+    <div class="tb-analytics-box">
+        <h3>Audience Gender</h3>
+        <?php if (!empty($genderReport['rows'])): ?>
+            <ol class="tb-top-list">
+                <?php foreach ($genderReport['rows'] as $row): ?>
+                    <li><?php echo htmlspecialchars($row['dimensionValues'][0]['value'] ?? 'Unknown'); ?> – <?php echo number_format((int) ($row['metricValues'][0]['value'] ?? 0)); ?> views</li>
+                <?php endforeach; ?>
+            </ol>
+        <?php else: ?>
+            <p class="tb-muted">Gender data not available for this property.</p>
+        <?php endif; ?>
+    </div>
+    <div class="tb-analytics-box">
+        <h3>Audience Age</h3>
+        <?php if (!empty($ageReport['rows'])): ?>
+            <ol class="tb-top-list">
+                <?php foreach ($ageReport['rows'] as $row): ?>
+                    <li><?php echo htmlspecialchars($row['dimensionValues'][0]['value'] ?? 'Unknown'); ?> – <?php echo number_format((int) ($row['metricValues'][0]['value'] ?? 0)); ?> views</li>
+                <?php endforeach; ?>
+            </ol>
+        <?php else: ?>
+            <p class="tb-muted">Age data not available for this property.</p>
+        <?php endif; ?>
+    </div>
 </div>
