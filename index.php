@@ -155,5 +155,6 @@ if (!in_array($page, $validPages, true)) {
 </div>
 
 <script src="public/js/app.js"></script>
+<script src="public/js/track_player.js"></script>
 </body>
 </html>
