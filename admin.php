@@ -85,9 +85,10 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
         $apple = trim($_POST['apple_music_url'] ?? '');
         $spot  = trim($_POST['spotify_url'] ?? '');
         $released = isset($_POST['released']) ? 1 : 0;
+        $collectionId = trim($_POST['collection_id'] ?? '');
         if ($title) {
             // Build update statement; use parameter binding for nulls
-            $stmt = $pdo->prepare("UPDATE tb_songs SET title = ?, mp3_path = ?, cover_path = ?, apple_music_url = ?, spotify_url = ?, is_released = ? WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE tb_songs SET title = ?, mp3_path = ?, cover_path = ?, apple_music_url = ?, spotify_url = ?, is_released = ?, collection_id = ? WHERE id = ?");
             $stmt->execute([
                 $title,
                 ($mp3 !== '' ? $mp3 : null),
@@ -95,6 +96,7 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
                 ($apple !== '' ? $apple : null),
                 ($spot  !== '' ? $spot  : null),
                 $released,
+                $collectionId !== '' ? (int)$collectionId : null,
                 $songId
             ]);
         }
