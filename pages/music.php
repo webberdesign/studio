@@ -28,6 +28,42 @@ $placeholderCover = 'assets/icons/icon-192.png';
 // directly from the music page using the same inputs as the admin panel.
 $isAdmin = tb_is_admin();
 
+// Build data for the unreleased tracklist player
+$unreleasedTrackItems = [];
+$unreleasedCover = $placeholderCover;
+foreach ($unreleased as $song) {
+    if (!empty($song['cover_path']) && $unreleasedCover === $placeholderCover) {
+        $unreleasedCover = $song['cover_path'];
+    }
+    $unreleasedTrackItems[] = [
+        'title' => $song['title'],
+        'src' => $song['mp3_path'] ?? '',
+        'cover' => !empty($song['cover_path']) ? $song['cover_path'] : $placeholderCover,
+        'has_cover' => !empty($song['cover_path']),
+    ];
+}
+$unreleasedTrackItemsJson = htmlspecialchars(json_encode($unreleasedTrackItems), ENT_QUOTES, 'UTF-8');
+$unreleasedTrackCount = count($unreleased);
+
+// Build data for released tracklist player
+$releasedTrackItems = [];
+$releasedCover = $placeholderCover;
+foreach ($releasedSongs as $song) {
+    if (!empty($song['cover_path']) && $releasedCover === $placeholderCover) {
+        $releasedCover = $song['cover_path'];
+    }
+    $releasedTrackItems[] = [
+        'title' => $song['title'],
+        'src' => $song['mp3_path'] ?? '',
+        'cover' => !empty($song['cover_path']) ? $song['cover_path'] : $placeholderCover,
+        'has_cover' => !empty($song['cover_path']),
+        'apple' => $song['apple_music_url'] ?? '',
+        'spotify' => $song['spotify_url'] ?? '',
+    ];
+}
+$releasedTrackItemsJson = htmlspecialchars(json_encode($releasedTrackItems), ENT_QUOTES, 'UTF-8');
+$releasedTrackCount = count($releasedSongs);
+
 // Fetch collections for display on the music page
 $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
                 ->fetchAll(PDO::FETCH_ASSOC);

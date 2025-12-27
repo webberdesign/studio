@@ -17,6 +17,10 @@ require_once __DIR__ . '/../config.php';
             <i class="fab fa-youtube"></i>
             <span>YouTube Analytics</span>
         </a>
+        <a href="?page=analytics-sp" class="tb-analytics-link">
+            <i class="fab fa-spotify"></i>
+            <span>Spotify Analytics</span>
+        </a>
         <a href="?page=analytics-web" class="tb-analytics-link">
             <i class="fas fa-globe"></i>
             <span>Titty Bingo Website</span>
@@ -24,10 +28,6 @@ require_once __DIR__ . '/../config.php';
         <a href="?page=analytics-app" class="tb-analytics-link">
             <i class="fas fa-mobile-screen-button"></i>
             <span>TB MusicBox App</span>
-        </a>
-        <a href="?page=analytics-sp" class="tb-analytics-link">
-            <i class="fab fa-spotify"></i>
-            <span>Spotify Analytics</span>
         </a>
     </div>
     <div id="tbAnalyticsLoading" class="tb-loading-overlay" aria-hidden="true">
