@@ -30,4 +30,18 @@ require_once __DIR__ . '/../config.php';
             <span>TB MusicBox App</span>
         </a>
     </div>
+    <div id="tbAnalyticsLoading" class="tb-loading-overlay" aria-hidden="true">
+        <div class="tb-loading">Loading Analytics…</div>
+    </div>
 </section>
+<script>
+  document.querySelectorAll('.tb-analytics-link').forEach(link => {
+    link.addEventListener('click', () => {
+      const overlay = document.getElementById('tbAnalyticsLoading');
+      if (overlay) {
+        overlay.classList.add('active');
+        overlay.setAttribute('aria-hidden', 'false');
+      }
+    });
+  });
+</script>
