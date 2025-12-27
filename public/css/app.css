@@ -246,7 +246,7 @@ body.tb-body {
 .tb-card-thumb {
   width: 100%;
   display: block;
-  aspect-ratio: 16/9;
+  aspect-ratio: 1 / 1;
   object-fit: cover;
 }
 
@@ -501,6 +501,7 @@ body.tb-body {
   width: 100%;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.8rem;
   border: 1px solid rgba(148, 163, 184, 0.25);
   background: var(--tb-bg-elevated);
@@ -510,6 +511,13 @@ body.tb-body {
   text-align: left;
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.tb-track-main {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 0;
 }
 
 .tb-track-row:hover {
@@ -533,6 +541,22 @@ body.tb-body {
   font-size: 1rem;
   font-weight: 600;
   color: var(--tb-text);
+}
+
+.tb-track-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tb-track-links a {
+  color: var(--tb-muted);
+  font-size: 1rem;
+  transition: color 0.2s ease;
+}
+
+.tb-track-links a:hover {
+  color: #f97316;
 }
 
 .tb-track-player {

@@ -106,6 +106,11 @@ const initTracklistPlayer = (container) => {
   };
 
   rows.forEach((row) => {
+    row.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        event.stopPropagation();
+      });
+    });
     row.addEventListener("click", () => {
       const index = Number(row.dataset.trackIndex);
       if (Number.isNaN(index)) return;
