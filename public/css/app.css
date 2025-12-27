@@ -196,7 +196,7 @@ body.tb-body {
 .tb-main {
   flex: 1;
   padding: 1.25rem 1rem 1.5rem;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -1664,6 +1664,13 @@ body.tb-body {
 .tb-stat-card.tb-stat-card--highlight .tb-stat-value {
   font-size: 1.6rem;
   font-weight: 700;
+}
+.tb-stat-card.tb-stat-card--large .tb-stat-value {
+  font-size: 1.9rem;
+  font-weight: 700;
+}
+.tb-stat-card.tb-stat-card--large h3 {
+  font-size: 1rem;
 }
 .tb-stat-card.is-disabled {
   opacity: 0.45;

@@ -171,10 +171,6 @@ $genderBreakdown = $accessToken ? fetchChannelDemographics($accessToken, 'gender
           <div class="tb-stat-value"><?php echo number_format($viewCount); ?></div>
         </div>
         <div class="tb-stat-card">
-          <h3>Video Count</h3>
-          <div class="tb-stat-value"><?php echo number_format($videoCount); ?></div>
-        </div>
-        <div class="tb-stat-card">
           <h3>Avg Views per Video</h3>
           <div class="tb-stat-value"><?php echo number_format($avgViews); ?></div>
         </div>
@@ -235,6 +231,9 @@ $genderBreakdown = $accessToken ? fetchChannelDemographics($accessToken, 'gender
     </div>
 
     <h2 style="margin-top:1.5rem">Videos</h2>
+    <?php if ($channelStats): ?>
+      <p class="tb-muted">Total Published Videos: <?php echo number_format($videoCount); ?></p>
+    <?php endif; ?>
 </div>
 
 <div class="video-gallery">
