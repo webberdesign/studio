@@ -115,48 +115,125 @@ function fetchChannelTopCities($accessToken, $maxResults = 10) {
     return $results;
 }
 
+/**
+ * Fetches demographic breakdowns (age group or gender) by viewer percentage.
+ *
+ * @param string $accessToken OAuth2 access token for YouTube Analytics
+ * @param string $dimension   Demographic dimension (ageGroup|gender)
+ * @param int    $maxResults  Maximum rows to return
+ * @return array
+ */
+function fetchChannelDemographics($accessToken, $dimension, $maxResults = 6) {
+    $startDate = '2021-01-01';
+    $endDate   = date('Y-m-d');
+    $apiUrl = "https://youtubeanalytics.googleapis.com/v2/reports"
+        . "?dimensions={$dimension}"
+        . "&metrics=viewerPercentage"
+        . "&ids=channel==MINE"
+        . "&startDate={$startDate}"
+        . "&endDate={$endDate}"
+        . "&sort=-viewerPercentage"
+        . "&maxResults=" . intval($maxResults);
+    $ch = curl_init($apiUrl);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array('Authorization: Bearer ' . $accessToken));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $response = json_decode(curl_exec($ch), true);
+    curl_close($ch);
+    return $response['rows'] ?? [];
+}
+
 $videos = tb_fetch_all_videos($apiKey, $channelId);
 
 // Fetch top geographic stats for the channel.  These lists show the
 // countries and cities where the channel receives the most views.
 $topCountries = fetchChannelTopCountries($accessToken, 10);
 $topCities    = fetchChannelTopCities($accessToken, 10);
+$ageBreakdown = $accessToken ? fetchChannelDemographics($accessToken, 'ageGroup') : [];
+$genderBreakdown = $accessToken ? fetchChannelDemographics($accessToken, 'gender') : [];
 ?>
 
 <div class="tb-yt-header">
     <h2>YouTube Channel Stats</h2>
     <?php if ($channelStats): ?>
-      <div class="tb-analytics-box">
-        <p>Total Subscribers: <?php echo number_format($channelStats['subscriberCount']); ?></p>
-        <p>Total Views: <?php echo number_format($channelStats['viewCount']); ?></p>
-        <p>Video Count: <?php echo number_format($channelStats['videoCount']); ?></p>
+      <?php
+        $subscriberCount = (int) ($channelStats['subscriberCount'] ?? 0);
+        $viewCount = (int) ($channelStats['viewCount'] ?? 0);
+        $videoCount = max(1, (int) ($channelStats['videoCount'] ?? 0));
+        $avgViews = $viewCount > 0 ? round($viewCount / $videoCount) : 0;
+      ?>
+      <div class="tb-stats-grid tb-stats-grid--three">
+        <div class="tb-stat-card tb-stat-card--highlight">
+          <h3>Total Subscribers</h3>
+          <div class="tb-stat-value"><?php echo number_format($subscriberCount); ?></div>
+        </div>
+        <div class="tb-stat-card tb-stat-card--highlight">
+          <h3>Total Views</h3>
+          <div class="tb-stat-value"><?php echo number_format($viewCount); ?></div>
+        </div>
+        <div class="tb-stat-card">
+          <h3>Avg Views per Video</h3>
+          <div class="tb-stat-value"><?php echo number_format($avgViews); ?></div>
+        </div>
       </div>
     <?php else: ?>
       <p class="tb-error">Unable to fetch channel statistics.</p>
     <?php endif; ?>
 
-    <?php if (!empty($topCountries) || !empty($topCities)): ?>
-      <div class="tb-analytics-box" style="margin-top:1.5rem;">
+    <div class="tb-analytics-grid">
+      <div class="tb-analytics-box">
+        <h3>Top Countries by Views</h3>
         <?php if (!empty($topCountries)): ?>
-          <h3>Top Countries by Views</h3>
           <ol class="tb-top-list">
             <?php foreach ($topCountries as [$country, $views]): ?>
               <li><?php echo htmlspecialchars($country); ?> – <?php echo number_format($views); ?> views</li>
             <?php endforeach; ?>
           </ol>
+        <?php else: ?>
+          <p class="tb-muted">No country data available yet.</p>
         <?php endif; ?>
+      </div>
+      <div class="tb-analytics-box">
+        <h3>Top Cities by Views</h3>
         <?php if (!empty($topCities)): ?>
-          <h3 style="margin-top:1rem;">Top Cities by Views</h3>
           <ol class="tb-top-list">
             <?php foreach ($topCities as [$city, $views]): ?>
               <li><?php echo htmlspecialchars($city); ?> – <?php echo number_format($views); ?> views</li>
             <?php endforeach; ?>
           </ol>
+        <?php else: ?>
+          <p class="tb-muted">No city data available yet.</p>
         <?php endif; ?>
       </div>
-    <?php endif; ?>
+      <div class="tb-analytics-box">
+        <h3>Viewer Age Groups</h3>
+        <?php if (!empty($ageBreakdown)): ?>
+          <ol class="tb-top-list">
+            <?php foreach ($ageBreakdown as $row): ?>
+              <li><?php echo htmlspecialchars($row[0]); ?> – <?php echo round($row[1], 2); ?>%</li>
+            <?php endforeach; ?>
+          </ol>
+        <?php else: ?>
+          <p class="tb-muted">Age group data requires OAuth access.</p>
+        <?php endif; ?>
+      </div>
+      <div class="tb-analytics-box">
+        <h3>Viewer Gender</h3>
+        <?php if (!empty($genderBreakdown)): ?>
+          <ol class="tb-top-list">
+            <?php foreach ($genderBreakdown as $row): ?>
+              <li><?php echo htmlspecialchars($row[0]); ?> – <?php echo round($row[1], 2); ?>%</li>
+            <?php endforeach; ?>
+          </ol>
+        <?php else: ?>
+          <p class="tb-muted">Gender data requires OAuth access.</p>
+        <?php endif; ?>
+      </div>
+    </div>
 
     <h2 style="margin-top:1.5rem">Videos</h2>
+    <?php if ($channelStats): ?>
+      <p class="tb-muted">Total Published Videos: <?php echo number_format($videoCount); ?></p>
+    <?php endif; ?>
 </div>
 
 <div class="video-gallery">
