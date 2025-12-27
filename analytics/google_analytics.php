@@ -153,7 +153,7 @@ $stats = [
     ],
 ];
 
-$analyticsStart = '2021-01-01';
+$analyticsStart = '2023-01-01';
 $analyticsEnd = $today->format('Y-m-d');
 $topCountryReport = ga_fetch_report(
     $propertyId,
@@ -183,6 +183,25 @@ $topCityReport = ga_fetch_report(
     $accessToken,
     $apiKey,
     10,
+    [
+        [
+            'metric' => [
+                'metricName' => 'screenPageViews',
+            ],
+            'desc' => true,
+        ],
+    ]
+);
+
+$topPageReport = ga_fetch_report(
+    $propertyId,
+    ['screenPageViews'],
+    ['pagePath'],
+    $analyticsStart,
+    $analyticsEnd,
+    $accessToken,
+    $apiKey,
+    15,
     [
         [
             'metric' => [
@@ -242,6 +261,23 @@ foreach ($stats as $stat) {
         $values[] = $result['value'];
     }
 }
+
+$excludedPages = [
+    '/firestone-park/firestone-park-rental-rates/',
+];
+$topPages = [];
+if (!empty($topPageReport['rows'])) {
+    foreach ($topPageReport['rows'] as $row) {
+        $path = $row['dimensionValues'][0]['value'] ?? '';
+        if ($path === '' || in_array($path, $excludedPages, true)) {
+            continue;
+        }
+        $topPages[] = $row;
+        if (count($topPages) >= 7) {
+            break;
+        }
+    }
+}
 ?>
 
 <?php if (!empty($errors)): ?>
@@ -270,7 +306,19 @@ foreach ($stats as $stat) {
 
 <div class="tb-analytics-grid">
     <div class="tb-analytics-box">
-        <h3>Top Countries (2021–Present)</h3>
+        <h3>Top Pages (2023–Present)</h3>
+        <?php if (!empty($topPages)): ?>
+            <ol class="tb-top-list">
+                <?php foreach ($topPages as $row): ?>
+                    <li><?php echo htmlspecialchars($row['dimensionValues'][0]['value'] ?? 'Unknown'); ?> – <?php echo number_format((int) ($row['metricValues'][0]['value'] ?? 0)); ?> views</li>
+                <?php endforeach; ?>
+            </ol>
+        <?php else: ?>
+            <p class="tb-muted">No page data available yet.</p>
+        <?php endif; ?>
+    </div>
+    <div class="tb-analytics-box">
+        <h3>Top Countries (2023–Present)</h3>
         <?php if (!empty($topCountryReport['rows'])): ?>
             <ol class="tb-top-list">
                 <?php foreach ($topCountryReport['rows'] as $row): ?>
@@ -282,7 +330,7 @@ foreach ($stats as $stat) {
         <?php endif; ?>
     </div>
     <div class="tb-analytics-box">
-        <h3>Top Cities (2021–Present)</h3>
+        <h3>Top Cities (2023–Present)</h3>
         <?php if (!empty($topCityReport['rows'])): ?>
             <ol class="tb-top-list">
                 <?php foreach ($topCityReport['rows'] as $row): ?>
