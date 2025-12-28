@@ -128,4 +128,17 @@ $isAdmin = tb_is_admin();
             </form>
         </div>
     </div>
+
+    <div id="videoCommentModal" class="tb-video-modal tb-video-comment-modal">
+        <div class="tb-modal-content tb-video-comment-content">
+            <button class="tb-modal-close" type="button">&times;</button>
+            <div class="tb-video-comment-header">
+                <h3 id="videoCommentTitle">Comments</h3>
+            </div>
+            <form class="tb-feed-comment-form">
+                <textarea rows="2" placeholder="Write a comment..."></textarea>
+                <button type="button" class="tb-btn-secondary">Post Comment</button>
+            </form>
+        </div>
+    </div>
 </section>

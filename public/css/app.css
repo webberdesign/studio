@@ -1255,6 +1255,11 @@ body.tb-body {
   flex-direction: column;
 }
 
+.tb-video-card .tb-card-body {
+  position: relative;
+  z-index: 2;
+}
+
 .tb-video-card .tb-card-thumb {
   aspect-ratio: 16 / 9;
 }
@@ -1267,6 +1272,7 @@ body.tb-body {
 .tb-video-card .tb-play-overlay {
   position: absolute;
   inset: 0;
+  z-index: 1;
   border: none;
   /* Dark overlay across the entire video card */
   background: transparent;

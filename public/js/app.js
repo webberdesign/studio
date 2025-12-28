@@ -184,14 +184,6 @@ const initPageInteractions = (root = document) => {
         if (window.tbSharedTrackPlayer) {
           window.tbSharedTrackPlayer.pause();
         }
-        // On small screens attempt to enter full screen automatically
-        if (window.innerWidth <= 768 && typeof videoModal.requestFullscreen === 'function') {
-          try {
-            videoModal.requestFullscreen();
-          } catch (err) {
-            // ignore if cannot enter full screen
-          }
-        }
       });
     });
     // close button
@@ -227,6 +219,32 @@ const initPageInteractions = (root = document) => {
   const videoCommentTitle = scope.querySelector('#videoCommentTitle');
   if (videoCommentModal && videoCommentTitle) {
     scope.querySelectorAll('.tb-video-comment-trigger').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const card = btn.closest('.tb-video-card');
+        const title = card ? card.dataset.videoTitle : '';
+        videoCommentTitle.textContent = title ? `${title} Comments` : 'Comments';
+        videoCommentModal.classList.add('active');
+      });
+    });
+
+    const commentClose = videoCommentModal.querySelector('.tb-modal-close');
+    if (commentClose) {
+      commentClose.addEventListener('click', () => {
+        videoCommentModal.classList.remove('active');
+      });
+    }
+    videoCommentModal.addEventListener('click', (e) => {
+      if (e.target === videoCommentModal) {
+        videoCommentModal.classList.remove('active');
+      }
+    });
+  }
+
+  const videoCommentModal = document.getElementById('videoCommentModal');
+  const videoCommentTitle = document.getElementById('videoCommentTitle');
+  if (videoCommentModal && videoCommentTitle) {
+    document.querySelectorAll('.tb-video-comment-trigger').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const card = btn.closest('.tb-video-card');
