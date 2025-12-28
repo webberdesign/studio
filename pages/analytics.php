@@ -13,38 +13,29 @@ require_once __DIR__ . '/../config.php';
     <p class="tb-subtitle">Choose which platform’s insights you’d like to view.</p>
 
     <div class="tb-analytics-links">
-        <a href="?page=analytics-yt" class="tb-analytics-link">
+        <a href="?page=analytics-yt" class="tb-analytics-link" data-loading-message="Loading Latest Analytics">
             <i class="fab fa-youtube"></i>
             <span>YouTube Analytics</span>
         </a>
-        <a href="?page=analytics-sp" class="tb-analytics-link">
+        <a href="?page=analytics-sp" class="tb-analytics-link" data-loading-message="Loading Latest Analytics">
             <i class="fab fa-spotify"></i>
             <span>Spotify Analytics</span>
         </a>
-        <a href="?page=analytics-web" class="tb-analytics-link">
+        <a href="?page=analytics-web" class="tb-analytics-link" data-loading-message="Loading Latest Analytics">
             <i class="fas fa-globe"></i>
             <span>Titty Bingo Website</span>
         </a>
-        <a href="?page=analytics-app" class="tb-analytics-link">
+        <a href="?page=analytics-app" class="tb-analytics-link" data-loading-message="Loading Latest Analytics">
             <i class="fas fa-mobile-screen-button"></i>
             <span>TB MusicBox App</span>
         </a>
-    </div>
-    <div id="tbAnalyticsLoading" class="tb-loading-overlay" aria-hidden="true">
-        <div class="tb-loading">Loading Analytics…</div>
-    </div>
-    <div id="tbAnalyticsLoading" class="tb-loading-overlay" aria-hidden="true">
-        <div class="tb-loading">Loading Latest Analytics…</div>
+        <a href="?page=analytics-ig" class="tb-analytics-link" data-loading-message="Loading Latest Analytics">
+            <i class="fab fa-instagram"></i>
+            <span>Instagram Analytics</span>
+        </a>
+        <a href="?page=analytics-fb" class="tb-analytics-link" data-loading-message="Loading Latest Analytics">
+            <i class="fab fa-facebook"></i>
+            <span>Facebook Analytics</span>
+        </a>
     </div>
 </section>
-<script>
-  document.querySelectorAll('.tb-analytics-link').forEach(link => {
-    link.addEventListener('click', () => {
-      const overlay = document.getElementById('tbAnalyticsLoading');
-      if (overlay) {
-        overlay.classList.add('active');
-        overlay.setAttribute('aria-hidden', 'false');
-      }
-    });
-  });
-</script>

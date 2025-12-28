@@ -6,9 +6,12 @@ require_once __DIR__ . '/config.php';
 
 // Pull in the refresh token helper used by other analytics pages
 include __DIR__ . '/analytics/refreshToken.php';
+require_once __DIR__ . '/analytics/cache_helpers.php';
 
 // Determine current theme for styling
 $currentTheme = tb_get_theme();
+
+$isAjax = isset($_GET['ajax']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
 
 // Retrieve the requested video ID and validate it
 $videoId = isset($_GET['videoID']) ? preg_replace('/[^\w-]/', '', $_GET['videoID']) : '';
@@ -211,6 +214,54 @@ function fetchViewCompletionMetrics($accessToken, $videoId) {
     }
 }
 
+// Build cached analytics section markup.
+$cacheKey = 'analytics_video_' . $videoId;
+$sectionContent = tb_cache_read($cacheKey, 7200);
+if ($sectionContent === null) {
+    ob_start();
+    ?>
+    <section class="tb-section">
+        <a href="index.php?page=analytics" class="tb-btn-secondary tb-back-link" data-loading-message="Loading Latest Analytics"><i class="fas fa-arrow-left"></i> Back to Analytics</a>
+        <h1 class="tb-title">Video Analytics</h1>
+        <?php
+        // Display video title and thumbnail
+        fetchVideoTitle($apiKey, $videoId, $accessToken);
+        displayVideoThumbnail($videoId);
+        ?>
+        <div class="tb-analytics-box">
+            <?php
+            // Overall statistics: views, likes, comments, subscribers
+            fetchTotalViews($videoId, $apiKey, $accessToken);
+            fetchViewCompletionMetrics($accessToken, $videoId);
+            fetchCurrentStatsDataAPI($apiKey, $videoId, $accessToken);
+            fetchSubscriberCount($apiKey, $channelId, $accessToken);
+            ?>
+        </div>
+        <div class="tb-analytics-box">
+            <?php fetchUserActivityByCity($accessToken, $videoId); ?>
+        </div>
+        <div class="tb-analytics-box">
+            <?php fetchUserActivityByUSCity($accessToken, $videoId); ?>
+        </div>
+        <div class="tb-analytics-box">
+            <?php fetchUserActivityByProvince($accessToken, $videoId); ?>
+        </div>
+        <div class="tb-analytics-box">
+            <?php fetchUserActivityByCountry($accessToken, $videoId); ?>
+        </div>
+    </section>
+    <?php
+    $sectionContent = ob_get_clean();
+    tb_cache_write($cacheKey, $sectionContent);
+}
+
+if ($isAjax) {
+    echo '<div class="tb-ajax-page" data-page-key="analytics" data-page-title="Titty Bingo Studio · Video Analytics">';
+    echo $sectionContent;
+    echo '</div>';
+    exit;
+}
+
 ?>
 <!doctype html>
 <html lang="en">
@@ -233,13 +284,13 @@ function fetchViewCompletionMetrics($accessToken, $videoId) {
         <button class="tb-close-btn" id="tbCloseNav"><i class="fas fa-times"></i></button>
     </div>
     <nav class="tb-sidenav-links">
-        <a href="index.php?page=videos" class="<?php /* highlight if currently on videos? */ ?>">
+        <a href="index.php?page=videos" data-nav-page="videos" class="<?php /* highlight if currently on videos? */ ?>">
             <i class="fas fa-film"></i> Videos
         </a>
-        <a href="index.php?page=music"><i class="fas fa-music"></i> Music</a>
-        <a href="index.php?page=feed"><i class="fas fa-newspaper"></i> Feed</a>
-        <a href="index.php?page=analytics" class="active"><i class="fas fa-chart-line"></i> Analytics</a>
-        <a href="index.php?page=settings"><i class="fas fa-gear"></i> Settings</a>
+        <a href="index.php?page=music" data-nav-page="music"><i class="fas fa-music"></i> Music</a>
+        <a href="index.php?page=feed" data-nav-page="feed"><i class="fas fa-newspaper"></i> Feed</a>
+        <a href="index.php?page=analytics" data-nav-page="analytics" class="active"><i class="fas fa-chart-line"></i> Analytics</a>
+        <a href="index.php?page=settings" data-nav-page="settings"><i class="fas fa-gear"></i> Settings</a>
     </nav>
 </aside>
 
@@ -252,49 +303,33 @@ function fetchViewCompletionMetrics($accessToken, $videoId) {
             <span class="tb-logo-tag">Studio</span>
         </div>
         <div class="tb-header-spacer"></div>
+        <div class="tb-header-profile">
+            <span class="tb-header-avatar">
+                <img src="assets/icons/icon-152.png" alt="Profile" class="tb-header-avatar-img">
+            </span>
+            <span class="tb-header-name">Dahr J.</span>
+        </div>
     </header>
 
     <!-- Main content -->
     <main class="tb-main">
-        <section class="tb-section">
-            <a href="index.php?page=analytics" class="tb-btn-secondary tb-back-link"><i class="fas fa-arrow-left"></i> Back to Analytics</a>
-            <h1 class="tb-title">Video Analytics</h1>
-            <?php
-            // Display video title and thumbnail
-            fetchVideoTitle($apiKey, $videoId, $accessToken);
-            displayVideoThumbnail($videoId);
-            ?>
-            <div class="tb-analytics-box">
-                <?php
-                // Overall statistics: views, likes, comments, subscribers
-                fetchTotalViews($videoId, $apiKey, $accessToken);
-                fetchViewCompletionMetrics($accessToken, $videoId);
-                fetchCurrentStatsDataAPI($apiKey, $videoId, $accessToken);
-                fetchSubscriberCount($apiKey, $channelId, $accessToken);
-                ?>
-            </div>
-            <div class="tb-analytics-box">
-                <?php fetchUserActivityByCity($accessToken, $videoId); ?>
-            </div>
-            <div class="tb-analytics-box">
-                <?php fetchUserActivityByUSCity($accessToken, $videoId); ?>
-            </div>
-            <div class="tb-analytics-box">
-                <?php fetchUserActivityByProvince($accessToken, $videoId); ?>
-            </div>
-            <div class="tb-analytics-box">
-                <?php fetchUserActivityByCountry($accessToken, $videoId); ?>
-            </div>
-        </section>
+        <?php echo $sectionContent; ?>
     </main>
 
     <!-- Bottom navigation -->
     <nav class="tb-bottom-nav">
-        <a href="index.php?page=videos" class="tb-bottom-item"><i class="fas fa-film"></i><span>Videos</span></a>
-        <a href="index.php?page=music" class="tb-bottom-item"><i class="fas fa-music"></i><span>Music</span></a>
-        <a href="index.php?page=feed" class="tb-bottom-item"><i class="fas fa-newspaper"></i><span>Feed</span></a>
-        <a href="index.php?page=analytics" class="tb-bottom-item active"><i class="fas fa-chart-line"></i><span>Analytics</span></a>
+        <a href="index.php?page=videos" data-nav-page="videos" class="tb-bottom-item"><i class="fas fa-film"></i><span>Videos</span></a>
+        <a href="index.php?page=music" data-nav-page="music" class="tb-bottom-item"><i class="fas fa-music"></i><span>Music</span></a>
+        <a href="index.php?page=feed" data-nav-page="feed" class="tb-bottom-item"><i class="fas fa-newspaper"></i><span>Feed</span></a>
+        <a href="index.php?page=analytics" data-nav-page="analytics" class="tb-bottom-item active"><i class="fas fa-chart-line"></i><span>Analytics</span></a>
     </nav>
+
+    <div id="tbPageLoading" class="tb-loading-overlay" aria-hidden="true">
+        <div class="tb-loading">
+            <span class="tb-loading-spinner" aria-hidden="true"></span>
+            <span class="tb-loading-text">Loading…</span>
+        </div>
+    </div>
 </div>
 
 <!-- Core interactions -->

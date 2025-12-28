@@ -34,9 +34,18 @@ const getSourceType = (src) => {
   return "";
 };
 
-const initTracklistPlayer = (tracklists, player) => {
-  if (!player) return;
+const buildTracklists = () => {
+  const tracklistContainers = Array.from(document.querySelectorAll("[data-tracklist]"));
+  return tracklistContainers.map((container, index) => ({
+    id: container.dataset.tracklistId || container.id || `tracklist-${index}`,
+    container,
+    tracks: getTracksFromContainer(container),
+    rows: Array.from(container.querySelectorAll("[data-track-index]")),
+    currentIndex: null,
+  }));
+};
 
+const createTrackPlayerInstance = (player) => {
   const prevBtn = player.querySelector("[data-track-prev]");
   const playBtn = player.querySelector("[data-track-play]");
   const nextBtn = player.querySelector("[data-track-next]");
@@ -45,12 +54,15 @@ const initTracklistPlayer = (tracklists, player) => {
   const coverImg = player.querySelector("[data-track-cover]");
   const playIcon = playBtn ? playBtn.querySelector("svg path") : null;
 
-  let activeList = null;
+  let tracklists = [];
+  let activeListId = null;
+  let activeIndex = null;
   let isPlaying = false;
   const audio = new Audio();
   let currentSource = "";
   let pendingSeekTime = null;
   let lastSavedTime = 0;
+  let hasRestored = false;
 
   const getPlayableSource = (track) => {
     if (!track) return "";
@@ -69,21 +81,26 @@ const initTracklistPlayer = (tracklists, player) => {
     return "";
   };
 
+  const getActiveList = () =>
+    tracklists.find((list) => list.id === activeListId) || null;
+
   const updateRows = () => {
+    const activeList = getActiveList();
     tracklists.forEach((list) => {
       list.rows.forEach((row, index) => {
         const isActiveList = list === activeList;
         row.classList.toggle(
           "is-playing",
-          isActiveList && isPlaying && index === list.currentIndex
+          isActiveList && isPlaying && index === activeIndex
         );
       });
     });
   };
 
   const updatePlayerInfo = () => {
+    const activeList = getActiveList();
     if (!activeList) return;
-    const track = activeList.tracks[activeList.currentIndex];
+    const track = activeList.tracks[activeIndex];
     if (!track) return;
     if (currentLabel) currentLabel.textContent = track.title;
     if (currentFile) {
@@ -112,10 +129,10 @@ const initTracklistPlayer = (tracklists, player) => {
   };
 
   const saveState = () => {
-    if (!activeList || activeList.currentIndex === null) return;
+    if (!activeListId || activeIndex === null) return;
     const state = {
-      listId: activeList.id,
-      index: activeList.currentIndex,
+      listId: activeListId,
+      index: activeIndex,
       time: audio.currentTime || 0,
       wasPlaying: isPlaying,
     };
@@ -126,15 +143,11 @@ const initTracklistPlayer = (tracklists, player) => {
     sessionStorage.removeItem(TRACK_PLAYER_STATE_KEY);
   };
 
-  const setActiveList = (list) => {
-    activeList = list;
-  };
-
   const loadTrack = (list, index) => {
     if (!list) return;
     if (index < 0 || index >= list.tracks.length) return;
-    setActiveList(list);
-    list.currentIndex = index;
+    activeListId = list.id;
+    activeIndex = index;
     const track = list.tracks[index];
     const source = getPlayableSource(track);
     pendingSeekTime = null;
@@ -162,16 +175,18 @@ const initTracklistPlayer = (tracklists, player) => {
   };
 
   const ensureActiveList = () => {
-    if (activeList) return true;
+    const activeList = getActiveList();
+    if (activeList) return activeList;
     const firstList = tracklists.find((list) => list.tracks.length > 0);
-    if (!firstList) return false;
-    setActiveList(firstList);
-    return true;
+    if (!firstList) return null;
+    activeListId = firstList.id;
+    return firstList;
   };
 
   const play = () => {
-    if (!ensureActiveList()) return;
-    if (activeList.currentIndex === null) {
+    const activeList = ensureActiveList();
+    if (!activeList) return;
+    if (activeIndex === null) {
       const firstPlayable = findPlayableIndex(activeList, 0, 1);
       if (firstPlayable === null) {
         if (currentFile) {
@@ -222,8 +237,9 @@ const initTracklistPlayer = (tracklists, player) => {
   };
 
   const nextTrack = () => {
+    const activeList = getActiveList();
     if (!activeList) return;
-    const startIndex = activeList.currentIndex === null ? 0 : activeList.currentIndex + 1;
+    const startIndex = activeIndex === null ? 0 : activeIndex + 1;
     const nextIndex = findPlayableIndex(
       activeList,
       startIndex % activeList.tracks.length,
@@ -235,9 +251,10 @@ const initTracklistPlayer = (tracklists, player) => {
   };
 
   const prevTrack = () => {
+    const activeList = getActiveList();
     if (!activeList) return;
     const startIndex =
-      activeList.currentIndex === null ? activeList.tracks.length - 1 : activeList.currentIndex - 1;
+      activeIndex === null ? activeList.tracks.length - 1 : activeIndex - 1;
     const prevIndex = findPlayableIndex(
       activeList,
       (startIndex + activeList.tracks.length) % activeList.tracks.length,
@@ -248,58 +265,27 @@ const initTracklistPlayer = (tracklists, player) => {
     if (isPlaying) play();
   };
 
-  tracklists.forEach((list) => {
-    list.rows.forEach((row) => {
-      row.querySelectorAll("a").forEach((link) => {
-        link.addEventListener("click", (event) => {
-          event.stopPropagation();
+  const attachRowHandlers = () => {
+    tracklists.forEach((list) => {
+      list.rows.forEach((row) => {
+        row.querySelectorAll("a").forEach((link) => {
+          link.addEventListener("click", (event) => {
+            event.stopPropagation();
+          });
+        });
+        row.addEventListener("click", () => {
+          const index = Number(row.dataset.trackIndex);
+          if (Number.isNaN(index)) return;
+          loadTrack(list, index);
+          play();
         });
       });
-      row.addEventListener("click", () => {
-        const index = Number(row.dataset.trackIndex);
-        if (Number.isNaN(index)) return;
-        loadTrack(list, index);
-        play();
-      });
     });
-  });
-
-  if (playBtn) playBtn.addEventListener("click", togglePlay);
-  if (nextBtn) nextBtn.addEventListener("click", nextTrack);
-  if (prevBtn) prevBtn.addEventListener("click", prevTrack);
-
-  audio.addEventListener("ended", () => {
-    nextTrack();
-    play();
-  });
-
-  audio.addEventListener("loadedmetadata", () => {
-    if (pendingSeekTime !== null) {
-      audio.currentTime = pendingSeekTime;
-      pendingSeekTime = null;
-    }
-  });
-
-  audio.addEventListener("timeupdate", () => {
-    if (!activeList || activeList.currentIndex === null) return;
-    if (Math.abs(audio.currentTime - lastSavedTime) >= 1) {
-      lastSavedTime = audio.currentTime;
-      saveState();
-    }
-  });
-
-  updatePlayIcon(false);
-  updateRows();
-
-  window.tbSharedTrackPlayer = {
-    pause,
-    play,
-    get isPlaying() {
-      return isPlaying;
-    },
   };
 
   const restoreState = () => {
+    if (hasRestored) return;
+    hasRestored = true;
     const savedState = sessionStorage.getItem(TRACK_PLAYER_STATE_KEY);
     if (!savedState) return;
     let parsed = null;
@@ -321,21 +307,64 @@ const initTracklistPlayer = (tracklists, player) => {
     updateRows();
   };
 
-  restoreState();
+  const setTracklists = (lists) => {
+    tracklists = lists;
+    attachRowHandlers();
+
+    const hasTracks = tracklists.some((list) => list.tracks.length > 0);
+    if (!hasTracks && !isPlaying) {
+      player.style.display = "none";
+      return;
+    }
+
+    player.style.display = "";
+    updateRows();
+  };
+
+  if (playBtn) playBtn.addEventListener("click", togglePlay);
+  if (nextBtn) nextBtn.addEventListener("click", nextTrack);
+  if (prevBtn) prevBtn.addEventListener("click", prevTrack);
+
+  audio.addEventListener("ended", () => {
+    nextTrack();
+    play();
+  });
+
+  audio.addEventListener("loadedmetadata", () => {
+    if (pendingSeekTime !== null) {
+      audio.currentTime = pendingSeekTime;
+      pendingSeekTime = null;
+    }
+  });
+
+  audio.addEventListener("timeupdate", () => {
+    if (!activeListId || activeIndex === null) return;
+    if (Math.abs(audio.currentTime - lastSavedTime) >= 1) {
+      lastSavedTime = audio.currentTime;
+      saveState();
+    }
+  });
+
+  updatePlayIcon(false);
+  updateRows();
+
+  window.tbSharedTrackPlayer = {
+    pause,
+    play,
+    get isPlaying() {
+      return isPlaying;
+    },
+  };
+
+  return {
+    player,
+    setTracklists,
+    restoreState,
+  };
 };
 
-document.addEventListener("DOMContentLoaded", () => {
-  const tracklistContainers = Array.from(document.querySelectorAll("[data-tracklist]"));
-  if (!tracklistContainers.length) return;
-
-  const tracklists = tracklistContainers.map((container, index) => ({
-    id: container.dataset.tracklistId || container.id || `tracklist-${index}`,
-    container,
-    tracks: getTracksFromContainer(container),
-    rows: Array.from(container.querySelectorAll("[data-track-index]")),
-    currentIndex: null,
-  }));
-
+const initTrackPlayer = () => {
+  const tracklists = buildTracklists();
   const sharedPlayer = document.querySelector("[data-track-player-global]");
   const fallbackPlayer =
     !sharedPlayer && tracklists.length === 1
@@ -345,20 +374,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!player) return;
 
-  const hasTracks = tracklists.some((list) => list.tracks.length > 0);
-  if (!hasTracks) {
-    player.style.display = "none";
-    return;
-  }
-
   if (sharedPlayer) {
-    tracklistContainers.forEach((container) => {
-      const localPlayer = container.querySelector("[data-track-player]");
+    tracklists.forEach((list) => {
+      const localPlayer = list.container.querySelector("[data-track-player]");
       if (localPlayer) {
         localPlayer.style.display = "none";
       }
     });
   }
 
-  initTracklistPlayer(tracklists, player);
+  let instance = window.tbTrackPlayerInstance;
+  if (!instance || instance.player !== player) {
+    instance = createTrackPlayerInstance(player);
+    window.tbTrackPlayerInstance = instance;
+  }
+
+  instance.setTracklists(tracklists);
+  instance.restoreState();
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  initTrackPlayer();
 });
+
+window.tbInitTrackPlayer = initTrackPlayer;

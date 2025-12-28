@@ -3,6 +3,18 @@
     SECTION: Spotify Analytics Data Fetch & Render
 ------------------------------------------------------------*/
 
+require_once __DIR__ . '/cache_helpers.php';
+
+$cacheKey = 'analytics_spotify_overview';
+$cachedOutput = tb_cache_read($cacheKey, 7200);
+if ($cachedOutput !== null) {
+    echo $cachedOutput;
+    return;
+}
+
+ob_start();
+$cacheable = true;
+
 // Fetch Spotify analytics via RapidAPI
 $curl = curl_init();
 
@@ -25,15 +37,16 @@ $err = curl_error($curl);
 
 curl_close($curl);
 
+$data = null;
 if ($err) {
     echo '<p class="tb-error">cURL Error: ' . htmlspecialchars($err) . '</p>';
-    return;
-}
-
-$data = @json_decode($response, true);
-if (!$data) {
-    echo '<p class="tb-error">Error fetching Spotify data.</p>';
-    return;
+    $cacheable = false;
+} else {
+    $data = @json_decode($response, true);
+    if (!$data) {
+        echo '<p class="tb-error">Error fetching Spotify data.</p>';
+        $cacheable = false;
+    }
 }
 
 // Apply a configurable percentage boost to all numeric statistics.  This
@@ -43,78 +56,87 @@ if (!$data) {
 $boostPercent = 0.45;
 $boostFactor  = 1 + $boostPercent;
 
-// Boost top-level metrics if present
-if (isset($data['followers'])) {
-    $data['followers'] = (int) round($data['followers'] * $boostFactor);
-}
-if (isset($data['monthlyListeners'])) {
-    $data['monthlyListeners'] = (int) round($data['monthlyListeners'] * $boostFactor);
-}
-
-// Boost top cities
-if (isset($data['topCities']) && is_array($data['topCities'])) {
-    foreach ($data['topCities'] as &$city) {
-        if (isset($city['numberOfListeners'])) {
-            $city['numberOfListeners'] = (int) round($city['numberOfListeners'] * $boostFactor);
-        }
+if ($data) {
+    // Boost top-level metrics if present
+    if (isset($data['followers'])) {
+        $data['followers'] = (int) round($data['followers'] * $boostFactor);
     }
-    unset($city);
-}
-
-// Boost top tracks
-if (isset($data['topTracks']) && is_array($data['topTracks'])) {
-    foreach ($data['topTracks'] as &$track) {
-        if (isset($track['streamCount'])) {
-            $track['streamCount'] = (int) round($track['streamCount'] * $boostFactor);
-        }
+    if (isset($data['monthlyListeners'])) {
+        $data['monthlyListeners'] = (int) round($data['monthlyListeners'] * $boostFactor);
     }
-    unset($track);
+
+    // Boost top cities
+    if (isset($data['topCities']) && is_array($data['topCities'])) {
+        foreach ($data['topCities'] as &$city) {
+            if (isset($city['numberOfListeners'])) {
+                $city['numberOfListeners'] = (int) round($city['numberOfListeners'] * $boostFactor);
+            }
+        }
+        unset($city);
+    }
+
+    // Boost top tracks
+    if (isset($data['topTracks']) && is_array($data['topTracks'])) {
+        foreach ($data['topTracks'] as &$track) {
+            if (isset($track['streamCount'])) {
+                $track['streamCount'] = (int) round($track['streamCount'] * $boostFactor);
+            }
+        }
+        unset($track);
+    }
+    ?>
+    <div class="tb-analytics-box">
+        <h2>Artist: <?php echo htmlspecialchars($data['name']); ?></h2>
+        <p>Followers: <?php echo number_format($data['followers']); ?></p>
+        <p>Monthly Listeners: <?php echo number_format($data['monthlyListeners']); ?></p>
+    </div>
+
+    <div class="tb-analytics-box">
+        <h3>Top Cities &mdash; Last 28 Days</h3>
+        <table class="tb-analytics-table">
+            <thead>
+                <tr>
+                    <th>City</th>
+                    <th>Country</th>
+                    <th>Listeners</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($data['topCities'] as $city): ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($city['city']); ?></td>
+                    <td><?php echo htmlspecialchars($city['country']); ?></td>
+                    <td><?php echo number_format($city['numberOfListeners']); ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="tb-analytics-box">
+        <h3>Top Tracks</h3>
+        <table class="tb-analytics-table">
+            <thead>
+                <tr>
+                    <th>Track Name</th>
+                    <th>Stream Count</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($data['topTracks'] as $track): ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($track['name']); ?></td>
+                    <td><?php echo number_format($track['streamCount']); ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php
 }
-?>
-<div class="tb-analytics-box">
-    <h2>Artist: <?php echo htmlspecialchars($data['name']); ?></h2>
-    <p>Followers: <?php echo number_format($data['followers']); ?></p>
-    <p>Monthly Listeners: <?php echo number_format($data['monthlyListeners']); ?></p>
-</div>
 
-<div class="tb-analytics-box">
-    <h3>Top Cities &mdash; Last 28 Days</h3>
-    <table class="tb-analytics-table">
-        <thead>
-            <tr>
-                <th>City</th>
-                <th>Country</th>
-                <th>Listeners</th>
-            </tr>
-        </thead>
-        <tbody>
-        <?php foreach ($data['topCities'] as $city): ?>
-            <tr>
-                <td><?php echo htmlspecialchars($city['city']); ?></td>
-                <td><?php echo htmlspecialchars($city['country']); ?></td>
-                <td><?php echo number_format($city['numberOfListeners']); ?></td>
-            </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
-</div>
-
-<div class="tb-analytics-box">
-    <h3>Top Tracks</h3>
-    <table class="tb-analytics-table">
-        <thead>
-            <tr>
-                <th>Track Name</th>
-                <th>Stream Count</th>
-            </tr>
-        </thead>
-        <tbody>
-        <?php foreach ($data['topTracks'] as $track): ?>
-            <tr>
-                <td><?php echo htmlspecialchars($track['name']); ?></td>
-                <td><?php echo number_format($track['streamCount']); ?></td>
-            </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
-</div>
+$renderedOutput = ob_get_clean();
+if ($cacheable) {
+    tb_cache_write($cacheKey, $renderedOutput);
+}
+echo $renderedOutput;

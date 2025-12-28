@@ -12,9 +12,90 @@ $currentTheme = tb_get_theme();
 // analytics subpages (analytics‑yt and analytics‑sp are still routable but
 // aren’t exposed directly in navigation).
 $page = $_GET['page'] ?? 'videos';
-$validPages = ['videos', 'music', 'feed', 'analytics', 'analytics-yt', 'analytics-web', 'analytics-app', 'analytics-sp', 'settings', 'collection'];
+$validPages = [
+    'videos',
+    'music',
+    'feed',
+    'analytics',
+    'analytics-yt',
+    'analytics-web',
+    'analytics-app',
+    'analytics-sp',
+    'analytics-ig',
+    'analytics-fb',
+    'settings',
+    'collection',
+];
 if (!in_array($page, $validPages, true)) {
     $page = 'videos';
+}
+
+$pageTitles = [
+    'videos' => 'Titty Bingo Studio · Videos',
+    'music' => 'Titty Bingo Studio · Music',
+    'feed' => 'Titty Bingo Studio · Feed',
+    'analytics' => 'Titty Bingo Studio · Analytics',
+    'analytics-yt' => 'Titty Bingo Studio · YouTube Analytics',
+    'analytics-web' => 'Titty Bingo Studio · Website Analytics',
+    'analytics-app' => 'Titty Bingo Studio · App Analytics',
+    'analytics-sp' => 'Titty Bingo Studio · Spotify Analytics',
+    'analytics-ig' => 'Titty Bingo Studio · Instagram Analytics',
+    'analytics-fb' => 'Titty Bingo Studio · Facebook Analytics',
+    'settings' => 'Titty Bingo Studio · Settings',
+    'collection' => 'Titty Bingo Studio · Collection',
+];
+$pageTitle = $pageTitles[$page] ?? 'Titty Bingo Studio';
+$pageKey = in_array($page, ['analytics-yt', 'analytics-web', 'analytics-app', 'analytics-sp', 'analytics-ig', 'analytics-fb'], true)
+    ? 'analytics'
+    : $page;
+
+$isAjax = isset($_GET['ajax']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
+if ($isAjax) {
+    ob_start();
+    switch ($page) {
+        case 'music':
+            include __DIR__ . '/pages/music.php';
+            break;
+        case 'analytics':
+            include __DIR__ . '/pages/analytics.php';
+            break;
+        case 'analytics-yt':
+            include __DIR__ . '/pages/analytics_youtube.php';
+            break;
+        case 'analytics-web':
+            include __DIR__ . '/pages/analytics_web.php';
+            break;
+        case 'analytics-app':
+            include __DIR__ . '/pages/analytics_app.php';
+            break;
+        case 'analytics-sp':
+            include __DIR__ . '/pages/analytics_spotify.php';
+            break;
+        case 'analytics-ig':
+            include __DIR__ . '/pages/analytics_instagram.php';
+            break;
+        case 'analytics-fb':
+            include __DIR__ . '/pages/analytics_facebook.php';
+            break;
+        case 'feed':
+            include __DIR__ . '/pages/feed.php';
+            break;
+        case 'settings':
+            include __DIR__ . '/pages/settings.php';
+            break;
+        case 'collection':
+            include __DIR__ . '/pages/collection.php';
+            break;
+        case 'videos':
+        default:
+            include __DIR__ . '/pages/videos.php';
+            break;
+    }
+    $content = ob_get_clean();
+    echo '<div class="tb-ajax-page" data-page-key="' . htmlspecialchars($pageKey) . '" data-page-title="' . htmlspecialchars($pageTitle) . '">';
+    echo $content;
+    echo '</div>';
+    exit;
 }
 ?>
 <!doctype html>
@@ -22,7 +103,7 @@ if (!in_array($page, $validPages, true)) {
 <head>
     <!-- SECTION: Meta / PWA -->
     <meta charset="UTF-8">
-    <title>Titty Bingo Studio</title>
+    <title><?php echo htmlspecialchars($pageTitle); ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Set theme color for browser UI based on current theme -->
     <meta name="theme-color" content="<?php echo ($currentTheme === 'light') ? '#ffffff' : '#0f172a'; ?>">
@@ -62,19 +143,19 @@ if (!in_array($page, $validPages, true)) {
         <button class="tb-close-btn" id="tbCloseNav"><i class="fas fa-times"></i></button>
     </div>
     <nav class="tb-sidenav-links">
-        <a href="?page=videos" class="<?php echo ($page === 'videos') ? 'active' : ''; ?>">
+        <a href="?page=videos" data-nav-page="videos" class="<?php echo ($page === 'videos') ? 'active' : ''; ?>">
             <i class="fas fa-film"></i> Videos
         </a>
-        <a href="?page=music" class="<?php echo ($page === 'music') ? 'active' : ''; ?>">
+        <a href="?page=music" data-nav-page="music" class="<?php echo ($page === 'music') ? 'active' : ''; ?>">
             <i class="fas fa-music"></i> Music
         </a>
-        <a href="?page=feed" class="<?php echo ($page === 'feed') ? 'active' : ''; ?>">
+        <a href="?page=feed" data-nav-page="feed" class="<?php echo ($page === 'feed') ? 'active' : ''; ?>">
             <i class="fas fa-newspaper"></i> Feed
         </a>
-        <a href="?page=analytics" class="<?php echo ($page === 'analytics') ? 'active' : ''; ?>">
+        <a href="?page=analytics" data-nav-page="analytics" class="<?php echo ($pageKey === 'analytics') ? 'active' : ''; ?>">
             <i class="fas fa-chart-line"></i> Analytics
         </a>
-        <a href="?page=settings" class="<?php echo ($page === 'settings') ? 'active' : ''; ?>">
+        <a href="?page=settings" data-nav-page="settings" class="<?php echo ($page === 'settings') ? 'active' : ''; ?>">
             <i class="fas fa-gear"></i> Settings
         </a>
     </nav>
@@ -95,6 +176,12 @@ if (!in_array($page, $validPages, true)) {
         </div>
 
         <div class="tb-header-spacer"></div>
+        <div class="tb-header-profile">
+            <span class="tb-header-avatar">
+                <img src="assets/icons/icon-152.png" alt="Profile" class="tb-header-avatar-img">
+            </span>
+            <span class="tb-header-name">Dahr J.</span>
+        </div>
     </header>
 
     <!-- SECTION: Page Content -->
@@ -119,6 +206,12 @@ if (!in_array($page, $validPages, true)) {
                 break;
             case 'analytics-sp':
                 include __DIR__ . '/pages/analytics_spotify.php';
+                break;
+            case 'analytics-ig':
+                include __DIR__ . '/pages/analytics_instagram.php';
+                break;
+            case 'analytics-fb':
+                include __DIR__ . '/pages/analytics_facebook.php';
                 break;
             case 'feed':
                 include __DIR__ . '/pages/feed.php';
@@ -161,19 +254,26 @@ if (!in_array($page, $validPages, true)) {
 
     <!-- SECTION: Bottom Mobile Nav -->
     <nav class="tb-bottom-nav">
-        <a href="?page=videos" class="tb-bottom-item <?php echo ($page === 'videos') ? 'active' : ''; ?>">
+        <a href="?page=videos" data-nav-page="videos" class="tb-bottom-item <?php echo ($page === 'videos') ? 'active' : ''; ?>">
             <i class="fas fa-film"></i><span>Videos</span>
         </a>
-        <a href="?page=music" class="tb-bottom-item <?php echo ($page === 'music') ? 'active' : ''; ?>">
+        <a href="?page=music" data-nav-page="music" class="tb-bottom-item <?php echo ($page === 'music') ? 'active' : ''; ?>">
             <i class="fas fa-music"></i><span>Music</span>
         </a>
-        <a href="?page=feed" class="tb-bottom-item <?php echo ($page === 'feed') ? 'active' : ''; ?>">
+        <a href="?page=feed" data-nav-page="feed" class="tb-bottom-item <?php echo ($page === 'feed') ? 'active' : ''; ?>">
             <i class="fas fa-newspaper"></i><span>Feed</span>
         </a>
-        <a href="?page=analytics" class="tb-bottom-item <?php echo ($page === 'analytics') ? 'active' : ''; ?>">
+        <a href="?page=analytics" data-nav-page="analytics" class="tb-bottom-item <?php echo ($pageKey === 'analytics') ? 'active' : ''; ?>">
             <i class="fas fa-chart-line"></i><span>Analytics</span>
         </a>
     </nav>
+
+    <div id="tbPageLoading" class="tb-loading-overlay" aria-hidden="true">
+        <div class="tb-loading">
+            <span class="tb-loading-spinner" aria-hidden="true"></span>
+            <span class="tb-loading-text">Loading…</span>
+        </div>
+    </div>
 </div>
 
 <script src="public/js/app.js"></script>
