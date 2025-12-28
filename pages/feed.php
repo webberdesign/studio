@@ -196,15 +196,16 @@ $commentsStmt = $pdo->prepare("SELECT * FROM tb_feed_comments WHERE post_id = ? 
     if (modalImg) modalImg.src = '';
   }
 
-  document.querySelectorAll('.tb-feed-image').forEach((button) => {
-    button.addEventListener('click', () => {
-      const src = button.getAttribute('data-image-src');
-      if (modal && modalImg && src) {
-        modalImg.src = src;
-        modal.classList.add('is-open');
-        modal.setAttribute('aria-hidden', 'false');
-      }
-    });
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest('.tb-feed-image');
+    if (!button) return;
+
+    const src = button.getAttribute('data-image-src');
+    if (modal && modalImg && src) {
+      modalImg.src = src;
+      modal.classList.add('is-open');
+      modal.setAttribute('aria-hidden', 'false');
+    }
   });
 
   if (modal) {
