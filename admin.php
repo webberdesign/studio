@@ -385,7 +385,7 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
                         <label>Title
                             <input type="text" name="title" required>
                         </label>
-                        <label>MP3 Path / URL (optional)
+                        <label>Audio Path / URL (MP3 or M4A, optional)
                             <input type="text" name="mp3_path">
                         </label>
                         <label>Cover Image (optional)
