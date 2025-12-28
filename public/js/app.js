@@ -130,6 +130,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const videoCommentModal = document.getElementById('videoCommentModal');
+  const videoCommentTitle = document.getElementById('videoCommentTitle');
+  if (videoCommentModal && videoCommentTitle) {
+    document.querySelectorAll('.tb-video-comment-trigger').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const card = btn.closest('.tb-video-card');
+        const title = card ? card.dataset.videoTitle : '';
+        videoCommentTitle.textContent = title ? `${title} Comments` : 'Comments';
+        videoCommentModal.classList.add('active');
+      });
+    });
+
+    const commentClose = videoCommentModal.querySelector('.tb-modal-close');
+    if (commentClose) {
+      commentClose.addEventListener('click', () => {
+        videoCommentModal.classList.remove('active');
+      });
+    }
+    videoCommentModal.addEventListener('click', (e) => {
+      if (e.target === videoCommentModal) {
+        videoCommentModal.classList.remove('active');
+      }
+    });
+  }
+
   // Song play buttons
   let currentAudio = null;
   let currentPlayBtn = null;
