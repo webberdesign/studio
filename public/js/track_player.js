@@ -36,6 +36,40 @@ const initTracklistPlayer = (container) => {
   let currentIndex = null;
   let isPlaying = false;
   const audio = new Audio();
+  let currentSource = "";
+
+  const getSourceType = (src) => {
+    if (!src) return "";
+    let filename = src;
+    try {
+      const url = new URL(src, window.location.href);
+      filename = url.pathname;
+    } catch (error) {
+      filename = src;
+    }
+    const ext = filename.split(".").pop()?.toLowerCase() || "";
+    if (ext === "mp3") return "audio/mpeg";
+    if (ext === "m4a") return "audio/mp4";
+    if (ext === "aac") return "audio/aac";
+    return "";
+  };
+
+  const getPlayableSource = (track) => {
+    if (!track) return "";
+    const sources = [track.mp3, track.m4a, track.src];
+
+    for (const source of sources) {
+      if (!source) continue;
+      const type = getSourceType(source);
+      if (!type) return source;
+      const support = audio.canPlayType(type);
+      if (support === "maybe" || support === "probably") {
+        return source;
+      }
+    }
+
+    return "";
+  };
 
   const updateRows = () => {
     rows.forEach((row, index) => {
@@ -48,13 +82,13 @@ const initTracklistPlayer = (container) => {
     if (!track) return;
     if (currentLabel) currentLabel.textContent = track.title;
     if (currentFile) {
-      if (track.src) {
-        let filename = track.src;
+      if (currentSource) {
+        let filename = currentSource;
         try {
-          const url = new URL(track.src, window.location.href);
-          filename = url.pathname.split("/").pop() || track.src;
+          const url = new URL(currentSource, window.location.href);
+          filename = url.pathname.split("/").pop() || currentSource;
         } catch (error) {
-          filename = track.src.split("/").pop() || track.src;
+          filename = currentSource.split("/").pop() || currentSource;
         }
         currentFile.textContent = decodeURIComponent(filename);
       } else {
@@ -77,8 +111,10 @@ const initTracklistPlayer = (container) => {
     currentIndex = index;
     const track = tracks[currentIndex];
     if (!track) return;
-    audio.src = track.src;
-    if (track.src) {
+    const source = getPlayableSource(track);
+    currentSource = source;
+    audio.src = source;
+    if (source) {
       audio.load();
     }
     updatePlayerInfo();
@@ -89,7 +125,7 @@ const initTracklistPlayer = (container) => {
     let index = startIndex;
     for (let i = 0; i < tracks.length; i += 1) {
       const track = tracks[index];
-      if (track && track.src) {
+      if (track && getPlayableSource(track)) {
         return index;
       }
       index = (index + direction + tracks.length) % tracks.length;
@@ -101,20 +137,33 @@ const initTracklistPlayer = (container) => {
     if (!tracks.length) return;
     if (currentIndex === null) {
       const firstPlayable = findPlayableIndex(0, 1);
-      if (firstPlayable === null) return;
+      if (firstPlayable === null) {
+        if (currentFile) {
+          currentFile.textContent = "Unsupported audio format";
+        }
+        return;
+      }
       loadTrack(firstPlayable);
     }
-    if (!audio.src) return;
+    if (!audio.src) {
+      if (currentFile) {
+        currentFile.textContent = "Unsupported audio format";
+      }
+      return;
+    }
     const playPromise = audio.play();
     isPlaying = true;
     player.classList.remove("is-hidden");
     updatePlayIcon(true);
     updateRows();
     if (playPromise && typeof playPromise.catch === "function") {
-      playPromise.catch(() => {
+      playPromise.catch((error) => {
         isPlaying = false;
         updatePlayIcon(false);
         updateRows();
+        if (currentFile && error && error.name === "NotSupportedError") {
+          currentFile.textContent = "Unsupported audio format";
+        }
       });
     }
   };

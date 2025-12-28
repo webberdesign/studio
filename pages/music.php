@@ -33,7 +33,7 @@ $unreleasedTrackItems = [];
 $unreleasedCover = $placeholderCover;
 foreach ($unreleased as $song) {
     $audioPath = $song['mp3_path'] ?? '';
-    if (empty($audioPath) && !empty($song['m4a_path'])) {
+    if ($audioPath === '' && !empty($song['m4a_path'])) {
         $audioPath = $song['m4a_path'];
     }
     if (!empty($song['cover_path']) && $unreleasedCover === $placeholderCover) {
@@ -54,7 +54,7 @@ $releasedTrackItems = [];
 $releasedCover = $placeholderCover;
 foreach ($releasedSongs as $song) {
     $audioPath = $song['mp3_path'] ?? '';
-    if (empty($audioPath) && !empty($song['m4a_path'])) {
+    if ($audioPath === '' && !empty($song['m4a_path'])) {
         $audioPath = $song['m4a_path'];
     }
     if (!empty($song['cover_path']) && $releasedCover === $placeholderCover) {
@@ -95,7 +95,7 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
                     <?php $cover = !empty($song['cover_path']) ? $song['cover_path'] : $placeholderCover; ?>
                     <?php
                         $audioPath = $song['mp3_path'] ?? '';
-                        if (empty($audioPath) && !empty($song['m4a_path'])) {
+                        if ($audioPath === '' && !empty($song['m4a_path'])) {
                             $audioPath = $song['m4a_path'];
                         }
                     ?>
@@ -127,7 +127,7 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
                     <?php $cover = !empty($song['cover_path']) ? $song['cover_path'] : $placeholderCover; ?>
                     <?php
                         $audioPath = $song['mp3_path'] ?? '';
-                        if (empty($audioPath) && !empty($song['m4a_path'])) {
+                        if ($audioPath === '' && !empty($song['m4a_path'])) {
                             $audioPath = $song['m4a_path'];
                         }
                     ?>

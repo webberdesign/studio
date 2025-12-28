@@ -31,12 +31,14 @@ $placeholderCover = 'assets/icons/icon-192.png';
 $trackItems = [];
 foreach ($collectionTracks as $track) {
     $audioPath = $track['mp3_path'] ?? '';
-    if (empty($audioPath) && !empty($track['m4a_path'])) {
+    if ($audioPath === '' && !empty($track['m4a_path'])) {
         $audioPath = $track['m4a_path'];
     }
     $trackItems[] = [
         'title' => $track['title'],
         'src' => $audioPath,
+        'mp3' => $track['mp3_path'] ?? '',
+        'm4a' => $track['m4a_path'] ?? '',
         'cover' => !empty($track['cover_path']) ? $track['cover_path'] : $placeholderCover,
     ];
 }
