@@ -3,6 +3,17 @@
     SECTION: YouTube Analytics Grid
 ------------------------------------------------------------*/
 
+require_once __DIR__ . '/cache_helpers.php';
+
+$cacheKey = 'analytics_youtube_overview';
+$cachedOutput = tb_cache_read($cacheKey, 7200);
+if ($cachedOutput !== null) {
+    echo $cachedOutput;
+    return;
+}
+
+ob_start();
+
 include __DIR__ . '/refreshToken.php';  // include refresh token script
 
 $userId = 1;
@@ -241,26 +252,14 @@ $genderBreakdown = $accessToken ? fetchChannelDemographics($accessToken, 'gender
         $thumbnailUrl = $item['snippet']['thumbnails']['medium']['url'];
     ?>
         <div class="video">
-            <a href="fetchvideo.php?videoID=<?php echo htmlspecialchars($videoId); ?>" class="tb-fetchvideo-link">
+            <a href="fetchvideo.php?videoID=<?php echo htmlspecialchars($videoId); ?>" class="tb-fetchvideo-link" data-loading-message="Loading Latest Analytics">
                 <img src="<?php echo htmlspecialchars($thumbnailUrl); ?>" alt="<?php echo htmlspecialchars($title); ?>">
                 <h2><?php echo htmlspecialchars($title); ?></h2>
             </a>
         </div>
     <?php endforeach; ?>
 </div>
-
-<div id="tbFetchVideoLoading" class="tb-loading-overlay" aria-hidden="true">
-    <div class="tb-loading">Loading Video Analytics…</div>
-</div>
-
-<script>
-  document.querySelectorAll('.tb-fetchvideo-link').forEach(link => {
-    link.addEventListener('click', () => {
-      const overlay = document.getElementById('tbFetchVideoLoading');
-      if (overlay) {
-        overlay.classList.add('active');
-        overlay.setAttribute('aria-hidden', 'false');
-      }
-    });
-  });
-</script>
+<?php
+$renderedOutput = ob_get_clean();
+tb_cache_write($cacheKey, $renderedOutput);
+echo $renderedOutput;
