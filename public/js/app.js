@@ -2,7 +2,10 @@
     SECTION: Shell Interactions
 ------------------------------------------------------------*/
 
-document.addEventListener('DOMContentLoaded', () => {
+const initShellControls = () => {
+  if (window.tbShellInitialized) return;
+  window.tbShellInitialized = true;
+
   // Side nav toggle
   const sideNav = document.getElementById('tbSideNav');
   const openBtn = document.getElementById('tbOpenNav');
@@ -30,10 +33,59 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!withinNav && !withinTrigger) sideNav.classList.remove('open');
   });
 
+  // Theme toggle
+  const themeToggleBtn = document.getElementById('tbThemeToggleBtn');
+  if (themeToggleBtn) {
+    // initialise theme: default to light when none stored
+    let savedTheme = localStorage.getItem('tb_theme');
+    if (!savedTheme) {
+      // no saved theme: set to light
+      savedTheme = 'light';
+      localStorage.setItem('tb_theme', savedTheme);
+    }
+    const isLight = savedTheme === 'light';
+    if (isLight) {
+      document.body.classList.add('tb-theme-light');
+      themeToggleBtn.classList.add('active');
+      const icon = themeToggleBtn.querySelector('i');
+      if (icon) {
+        // show moon icon in light mode to indicate switch to dark
+        icon.classList.remove('fa-sun');
+        icon.classList.add('fa-moon');
+      }
+    }
+    themeToggleBtn.addEventListener('click', () => {
+      const currentlyLight = document.body.classList.toggle('tb-theme-light');
+      // update local storage
+      localStorage.setItem('tb_theme', currentlyLight ? 'light' : 'dark');
+      themeToggleBtn.classList.toggle('active', currentlyLight);
+      const icon = themeToggleBtn.querySelector('i');
+      if (icon) {
+        if (currentlyLight) {
+          // show moon icon when in light mode
+          icon.classList.remove('fa-sun');
+          icon.classList.add('fa-moon');
+        } else {
+          // show sun icon when in dark mode
+          icon.classList.remove('fa-moon');
+          icon.classList.add('fa-sun');
+        }
+      }
+    });
+  }
+
+  // PWA: register service worker if present
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+};
+
+const initPageInteractions = (root = document) => {
+  const scope = root.querySelector ? root : document;
   // Analytics toggle
-  const toggle = document.getElementById('tbAnalyticsToggle');
-  const ytPane = document.getElementById('tbAnalyticsYT');
-  const spPane = document.getElementById('tbAnalyticsSP');
+  const toggle = scope.querySelector('#tbAnalyticsToggle');
+  const ytPane = scope.querySelector('#tbAnalyticsYT');
+  const spPane = scope.querySelector('#tbAnalyticsSP');
 
   if (toggle && ytPane && spPane) {
     toggle.addEventListener('click', (e) => {
@@ -50,9 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Videos toggle
-  const videosToggle = document.getElementById('tbVideosToggle');
-  const videosProduction = document.getElementById('tbVideosProduction');
-  const videosReleased = document.getElementById('tbVideosReleased');
+  const videosToggle = scope.querySelector('#tbVideosToggle');
+  const videosProduction = scope.querySelector('#tbVideosProduction');
+  const videosReleased = scope.querySelector('#tbVideosReleased');
   if (videosToggle && videosProduction && videosReleased) {
     videosToggle.addEventListener('click', (e) => {
       // find the button that has data-target attribute
@@ -69,10 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Songs toggle
-  const songsToggle = document.getElementById('tbSongsToggle');
-  const songsUnreleased = document.getElementById('tbSongsUnreleased');
-  const songsReleased = document.getElementById('tbSongsReleased');
-  const songsCollections = document.getElementById('tbSongsCollections');
+  const songsToggle = scope.querySelector('#tbSongsToggle');
+  const songsUnreleased = scope.querySelector('#tbSongsUnreleased');
+  const songsReleased = scope.querySelector('#tbSongsReleased');
+  const songsCollections = scope.querySelector('#tbSongsCollections');
   if (songsToggle && songsUnreleased && songsReleased && songsCollections) {
     songsToggle.addEventListener('click', (e) => {
       // find the button with data-target on click; could be nested inside
@@ -88,8 +140,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Video modal logic
-  const videoModal = document.getElementById('videoModal');
-  const videoIframe = document.getElementById('tbVideoIframe');
+  const videoModal = scope.querySelector('#videoModal');
+  const videoIframe = scope.querySelector('#tbVideoIframe');
   if (videoModal && videoIframe) {
     const commentPanel = videoModal.querySelector('.tb-video-comment-panel');
     const commentToggle = commentPanel ? commentPanel.querySelector('.tb-video-comment-toggle') : null;
@@ -109,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // delegate click on play overlays
-    document.querySelectorAll('.tb-video-card .tb-play-overlay').forEach(btn => {
+    scope.querySelectorAll('.tb-video-card .tb-play-overlay').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const card = btn.closest('.tb-video-card');
@@ -144,16 +196,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     // close button
     const closeBtn = videoModal.querySelector('.tb-modal-close');
-    closeBtn.addEventListener('click', () => {
-      videoModal.classList.remove('active');
-      videoIframe.src = '';
-      if (commentForm) {
-        commentForm.setAttribute('hidden', '');
-      }
-      if (commentToggle) {
-        commentToggle.setAttribute('aria-expanded', 'false');
-      }
-    });
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        videoModal.classList.remove('active');
+        videoIframe.src = '';
+        if (commentForm) {
+          commentForm.setAttribute('hidden', '');
+        }
+        if (commentToggle) {
+          commentToggle.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
     // click outside content to close
     videoModal.addEventListener('click', (e) => {
       if (e.target === videoModal) {
@@ -169,10 +223,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const videoCommentModal = document.getElementById('videoCommentModal');
-  const videoCommentTitle = document.getElementById('videoCommentTitle');
+  const videoCommentModal = scope.querySelector('#videoCommentModal');
+  const videoCommentTitle = scope.querySelector('#videoCommentTitle');
   if (videoCommentModal && videoCommentTitle) {
-    document.querySelectorAll('.tb-video-comment-trigger').forEach(btn => {
+    scope.querySelectorAll('.tb-video-comment-trigger').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const card = btn.closest('.tb-video-card');
@@ -198,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Song play buttons
   let currentAudio = null;
   let currentPlayBtn = null;
-  document.querySelectorAll('.tb-song-play-btn').forEach(btn => {
+  scope.querySelectorAll('.tb-song-play-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const src = btn.dataset.src;
       if (!src) return;
@@ -247,49 +301,223 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Theme toggle
-  const themeToggleBtn = document.getElementById('tbThemeToggleBtn');
-  if (themeToggleBtn) {
-    // initialise theme: default to light when none stored
-    let savedTheme = localStorage.getItem('tb_theme');
-    if (!savedTheme) {
-      // no saved theme: set to light
-      savedTheme = 'light';
-      localStorage.setItem('tb_theme', savedTheme);
+  const analyticsLoadingPairs = [
+    { loadingId: 'yt-loading', contentId: 'yt-content' },
+    { loadingId: 'ga-loading', contentId: 'ga-content' },
+    { loadingId: 'sp-loading', contentId: 'sp-content' },
+    { loadingId: 'app-loading', contentId: 'app-content' },
+  ];
+
+  analyticsLoadingPairs.forEach(({ loadingId, contentId }) => {
+    const loading = scope.querySelector(`#${loadingId}`);
+    const content = scope.querySelector(`#${contentId}`);
+    if (loading && content) {
+      loading.style.display = 'none';
+      content.style.display = 'block';
     }
-    const isLight = savedTheme === 'light';
-    if (isLight) {
-      document.body.classList.add('tb-theme-light');
-      themeToggleBtn.classList.add('active');
-      const icon = themeToggleBtn.querySelector('i');
-      if (icon) {
-        // show moon icon in light mode to indicate switch to dark
-        icon.classList.remove('fa-sun');
-        icon.classList.add('fa-moon');
-      }
-    }
-    themeToggleBtn.addEventListener('click', () => {
-      const currentlyLight = document.body.classList.toggle('tb-theme-light');
-      // update local storage
-      localStorage.setItem('tb_theme', currentlyLight ? 'light' : 'dark');
-      themeToggleBtn.classList.toggle('active', currentlyLight);
-      const icon = themeToggleBtn.querySelector('i');
-      if (icon) {
-        if (currentlyLight) {
-          // show moon icon when in light mode
-          icon.classList.remove('fa-sun');
-          icon.classList.add('fa-moon');
-        } else {
-          // show sun icon when in dark mode
-          icon.classList.remove('fa-moon');
-          icon.classList.add('fa-sun');
-        }
+  });
+
+  const toggleBtn = scope.querySelector('#tbFeedToggle');
+  const form = scope.querySelector('#tbFeedPostForm');
+  if (toggleBtn && form) {
+    toggleBtn.addEventListener('click', () => {
+      const isHidden = form.hasAttribute('hidden');
+      if (isHidden) {
+        form.removeAttribute('hidden');
+        toggleBtn.classList.add('active');
+        const label = toggleBtn.querySelector('span');
+        if (label) label.textContent = 'Hide Form';
+      } else {
+        form.setAttribute('hidden', '');
+        toggleBtn.classList.remove('active');
+        const label = toggleBtn.querySelector('span');
+        if (label) label.textContent = 'New Post';
       }
     });
   }
 
-  // PWA: register service worker if present
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+  const modal = scope.querySelector('#tbFeedModal');
+  const modalImg = scope.querySelector('#tbFeedModalImage');
+  const modalClose = scope.querySelector('#tbFeedModalClose');
+
+  const closeModal = () => {
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    if (modalImg) modalImg.src = '';
+  };
+
+  scope.querySelectorAll('.tb-feed-image').forEach((button) => {
+    button.addEventListener('click', () => {
+      const src = button.getAttribute('data-image-src');
+      if (modal && modalImg && src) {
+        modalImg.src = src;
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+      }
+    });
+  });
+
+  if (modal) {
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) {
+        closeModal();
+      }
+    });
   }
+  if (modalClose) {
+    modalClose.addEventListener('click', closeModal);
+  }
+  if (!window.tbFeedModalKeyHandler) {
+    window.tbFeedModalKeyHandler = true;
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      const activeModal = document.getElementById('tbFeedModal');
+      const activeImg = document.getElementById('tbFeedModalImage');
+      if (!activeModal) return;
+      activeModal.classList.remove('is-open');
+      activeModal.setAttribute('aria-hidden', 'true');
+      if (activeImg) activeImg.src = '';
+    });
+  }
+};
+
+const showPageLoading = (message = 'Loading…') => {
+  const overlay = document.getElementById('tbPageLoading');
+  if (!overlay) return;
+  const text = overlay.querySelector('.tb-loading-text');
+  if (text) {
+    text.textContent = message;
+  }
+  overlay.classList.add('active');
+  overlay.setAttribute('aria-hidden', 'false');
+};
+
+const hidePageLoading = () => {
+  const overlay = document.getElementById('tbPageLoading');
+  if (!overlay) return;
+  overlay.classList.remove('active');
+  overlay.setAttribute('aria-hidden', 'true');
+};
+
+const updateActiveNav = (pageKey) => {
+  if (!pageKey) return;
+  document.querySelectorAll('[data-nav-page]').forEach((link) => {
+    const isActive = link.dataset.navPage === pageKey;
+    link.classList.toggle('active', isActive);
+  });
+};
+
+const shouldHandleAjaxLink = (link) => {
+  if (!link) return false;
+  if (link.dataset.noAjax === 'true') return false;
+  if (link.target && link.target !== '_self') return false;
+  if (link.hasAttribute('download')) return false;
+
+  const href = link.getAttribute('href');
+  if (!href || href.startsWith('#')) return false;
+
+  const url = new URL(link.href, window.location.href);
+  if (url.origin !== window.location.origin) return false;
+
+  const isIndex = url.pathname.endsWith('index.php') || url.searchParams.has('page');
+  const isFetchVideo = url.pathname.endsWith('fetchvideo.php');
+  return isIndex || isFetchVideo;
+};
+
+const fetchAjaxPage = async (url, { push = true } = {}) => {
+  const requestUrl = new URL(url.toString());
+  requestUrl.searchParams.set('ajax', '1');
+
+  const response = await fetch(requestUrl.toString(), {
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to load page.');
+  }
+
+  const html = await response.text();
+  const temp = document.createElement('div');
+  temp.innerHTML = html;
+  const wrapper = temp.querySelector('.tb-ajax-page');
+  if (!wrapper) {
+    window.location.href = url.toString();
+    return;
+  }
+
+  const main = document.querySelector('.tb-main');
+  if (!main) {
+    window.location.href = url.toString();
+    return;
+  }
+
+  main.innerHTML = wrapper.innerHTML;
+  const pageTitle = wrapper.dataset.pageTitle;
+  const pageKey = wrapper.dataset.pageKey;
+
+  if (pageTitle) {
+    document.title = pageTitle;
+  }
+
+  updateActiveNav(pageKey);
+
+  if (push) {
+    history.pushState({ url: url.toString() }, '', url.toString());
+  }
+
+  initPageInteractions(main);
+  if (typeof window.tbInitTrackPlayer === 'function') {
+    window.tbInitTrackPlayer();
+  }
+};
+
+const initAjaxNavigation = () => {
+  if (window.tbAjaxInitialized) return;
+  window.tbAjaxInitialized = true;
+
+  document.addEventListener('click', async (event) => {
+    const link = event.target.closest('a');
+    if (!shouldHandleAjaxLink(link)) return;
+
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    event.preventDefault();
+    const url = new URL(link.href, window.location.href);
+    const message = link.dataset.loadingMessage || 'Loading…';
+
+    showPageLoading(message);
+
+    try {
+      await fetchAjaxPage(url, { push: true });
+    } catch (error) {
+      window.location.href = url.toString();
+      return;
+    } finally {
+      hidePageLoading();
+    }
+  });
+
+  window.addEventListener('popstate', async () => {
+    const url = new URL(window.location.href);
+    showPageLoading('Loading…');
+    try {
+      await fetchAjaxPage(url, { push: false });
+    } catch (error) {
+      window.location.href = url.toString();
+    } finally {
+      hidePageLoading();
+    }
+  });
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  initShellControls();
+  initPageInteractions(document);
+  initAjaxNavigation();
 });
+
+window.tbInitPageInteractions = initPageInteractions;
+window.tbShowPageLoading = showPageLoading;

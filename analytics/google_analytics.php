@@ -3,6 +3,18 @@
     SECTION: Google Analytics Data Fetch & Render
 ------------------------------------------------------------*/
 
+require_once __DIR__ . '/cache_helpers.php';
+
+$cacheKey = 'analytics_google_overview';
+$cachedOutput = tb_cache_read($cacheKey, 7200);
+if ($cachedOutput !== null) {
+    echo $cachedOutput;
+    return;
+}
+
+ob_start();
+$cacheable = true;
+
 $apiKey = getenv('GA_API_KEY') ?: (defined('GA_API_KEY') ? GA_API_KEY : null);
 $propertyId = getenv('GA_PROPERTY_ID') ?: (defined('GA_PROPERTY_ID') ? GA_PROPERTY_ID : null);
 $gaClientId = getenv('GA_CLIENT_ID') ?: (defined('GA_CLIENT_ID') ? GA_CLIENT_ID : null);
@@ -115,6 +127,12 @@ function ga_fetch_metric($propertyId, $metric, $startDate, $endDate, $accessToke
 if (!$propertyId) {
     echo '<p class="tb-error">Google Analytics is not configured.</p>';
     echo '<p class="tb-coming-soon">Set GA_PROPERTY_ID in your environment or config.php.</p>';
+    $cacheable = false;
+    $renderedOutput = ob_get_clean();
+    if ($cacheable) {
+        tb_cache_write($cacheKey, $renderedOutput);
+    }
+    echo $renderedOutput;
     return;
 }
 
@@ -129,6 +147,12 @@ if ($gaClientId || $gaClientSecret || $gaRefreshToken) {
 if (!$accessToken && !$apiKey) {
     echo '<p class="tb-error">Google Analytics credentials are missing.</p>';
     echo '<p class="tb-coming-soon">Provide GA_CLIENT_ID, GA_CLIENT_SECRET, GA_REFRESH_TOKEN (OAuth) or GA_API_KEY.</p>';
+    $cacheable = false;
+    $renderedOutput = ob_get_clean();
+    if ($cacheable) {
+        tb_cache_write($cacheKey, $renderedOutput);
+    }
+    echo $renderedOutput;
     return;
 }
 
@@ -345,6 +369,18 @@ if (!empty($topPageReport['rows'])) {
         </div>
     <?php endforeach; ?>
 </div>
+<?php
+$renderedOutput = ob_get_clean();
+if ($cacheable) {
+    tb_cache_write($cacheKey, $renderedOutput);
+}
+echo $renderedOutput;
+<?php
+$renderedOutput = ob_get_clean();
+if ($cacheable) {
+    tb_cache_write($cacheKey, $renderedOutput);
+}
+echo $renderedOutput;
 
 <?php
 $yearlyViews = [
