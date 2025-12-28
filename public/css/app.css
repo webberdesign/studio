@@ -1351,35 +1351,37 @@ body.tb-body {
   height: 100%;
 }
 
-.tb-video-comment-panel {
-  border-top: 1px solid var(--tb-border);
-  padding: 0.85rem 1rem 1rem;
-  display: grid;
-  gap: 0.75rem;
-}
-
-.tb-video-comment-toggle {
-  justify-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  border: 1px solid var(--tb-border);
+.tb-video-comment-trigger {
+  border: none;
   background: transparent;
   color: var(--tb-text);
-  border-radius: 999px;
-  padding: 0.35rem 0.85rem;
-  font-size: 0.85rem;
+  font-size: 1rem;
   cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  margin-top: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: 999px;
+  transition: color 0.2s ease, background 0.2s ease;
 }
 
-.tb-video-comment-toggle i {
-  font-size: 0.95rem;
+.tb-video-comment-trigger:hover {
+  color: var(--tb-accent);
+  background: rgba(249, 115, 22, 0.1);
 }
 
-.tb-video-comment-toggle:hover {
-  border-color: rgba(249, 115, 22, 0.65);
-  background: rgba(249, 115, 22, 0.08);
+.tb-video-comment-modal .tb-video-comment-content {
+  max-width: 520px;
+  width: 90%;
+  padding: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.tb-video-comment-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
 }
 
 /*  SECTION: Song Play Button & Links  */
@@ -1850,6 +1852,17 @@ body.tb-body {
   cursor: pointer;
   font-size: 1.2rem;
   line-height: 1;
+}
+
+@media (min-width: 901px) {
+  .tb-feed-modal-content {
+    max-height: 100vh;
+  }
+
+  .tb-feed-modal-content img {
+    max-height: 100vh;
+    object-fit: contain;
+  }
 }
 .tb-collection-cover {
   background: #000;
