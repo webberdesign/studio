@@ -31,7 +31,7 @@ $songs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $items = [];
 foreach ($songs as $s) {
     $audioPath = $s['mp3_path'] ?? '';
-    if ($audioPath === '' && !empty($s['m4a_path'])) {
+    if (empty($audioPath) && !empty($s['m4a_path'])) {
         $audioPath = $s['m4a_path'];
     }
     // Use mp3_path or m4a_path as source; if null, skip track
