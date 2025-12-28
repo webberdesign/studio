@@ -370,19 +370,6 @@ if (!empty($topPageReport['rows'])) {
     <?php endforeach; ?>
 </div>
 <?php
-$renderedOutput = ob_get_clean();
-if ($cacheable) {
-    tb_cache_write($cacheKey, $renderedOutput);
-}
-echo $renderedOutput;
-<?php
-$renderedOutput = ob_get_clean();
-if ($cacheable) {
-    tb_cache_write($cacheKey, $renderedOutput);
-}
-echo $renderedOutput;
-
-<?php
 $yearlyViews = [
     '2023' => 0,
     '2024' => 0,
@@ -481,3 +468,9 @@ if (!empty($yearlyReport['rows'])) {
         <?php endif; ?>
     </div>
 </div>
+<?php
+$renderedOutput = ob_get_clean();
+if ($cacheable) {
+    tb_cache_write($cacheKey, $renderedOutput);
+}
+echo $renderedOutput;
