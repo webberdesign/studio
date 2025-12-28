@@ -133,7 +133,7 @@ if (!$accessToken && !$apiKey) {
 }
 
 $today = new DateTimeImmutable('today');
-$since2021 = '2021-01-01';
+$since2023 = '2023-01-01';
 $lastNinetyDays = $today->modify('-90 days')->format('Y-m-d');
 
 $lastMonthStart = (new DateTimeImmutable('first day of last month'))->format('Y-m-d');
@@ -141,8 +141,8 @@ $lastMonthEnd = (new DateTimeImmutable('last day of last month'))->format('Y-m-d
 
 $stats = [
     [
-        'label' => 'Total Views (Since 2021)',
-        'start' => $since2021,
+        'label' => 'Total Views (Since 2023)',
+        'start' => $since2023,
         'end' => $today->format('Y-m-d'),
     ],
     [
@@ -249,36 +249,6 @@ $referrerReport = ga_fetch_report(
                 'metricName' => 'screenPageViews',
             ],
             'desc' => true,
-        ],
-    ]
-);
-
-$pageReport = ga_fetch_report(
-    $propertyId,
-    ['screenPageViews'],
-    ['pagePath'],
-    $analyticsStart,
-    $analyticsEnd,
-    $accessToken,
-    $apiKey,
-    8,
-    [
-        [
-            'metric' => [
-                'metricName' => 'screenPageViews',
-            ],
-            'desc' => true,
-        ],
-    ],
-    [
-        'notExpression' => [
-            'filter' => [
-                'fieldName' => 'pagePath',
-                'stringFilter' => [
-                    'matchType' => 'EXACT',
-                    'value' => '/firestone-park/firestone-pool/',
-                ],
-            ],
         ],
     ]
 );
@@ -448,18 +418,6 @@ if (!empty($yearlyReport['rows'])) {
             </ol>
         <?php else: ?>
             <p class="tb-muted">Referrer data not available for this property.</p>
-        <?php endif; ?>
-    </div>
-    <div class="tb-analytics-box">
-        <h3>Top Pages</h3>
-        <?php if (!empty($pageReport['rows'])): ?>
-            <ol class="tb-top-list">
-                <?php foreach ($pageReport['rows'] as $row): ?>
-                    <li><?php echo htmlspecialchars($row['dimensionValues'][0]['value'] ?? 'Unknown'); ?> – <?php echo number_format((int) ($row['metricValues'][0]['value'] ?? 0)); ?> views</li>
-                <?php endforeach; ?>
-            </ol>
-        <?php else: ?>
-            <p class="tb-muted">Page data not available for this property.</p>
         <?php endif; ?>
     </div>
     <div class="tb-analytics-box">
