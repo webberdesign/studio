@@ -1351,6 +1351,37 @@ body.tb-body {
   height: 100%;
 }
 
+.tb-video-comment-panel {
+  border-top: 1px solid var(--tb-border);
+  padding: 0.85rem 1rem 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tb-video-comment-toggle {
+  justify-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--tb-border);
+  background: transparent;
+  color: var(--tb-text);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.tb-video-comment-toggle i {
+  font-size: 0.95rem;
+}
+
+.tb-video-comment-toggle:hover {
+  border-color: rgba(249, 115, 22, 0.65);
+  background: rgba(249, 115, 22, 0.08);
+}
+
 /*  SECTION: Song Play Button & Links  */
 
 .tb-song-play-btn {

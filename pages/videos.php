@@ -50,7 +50,7 @@ $isAdmin = tb_is_admin();
                 $videoId = $m[1];
             }
         ?>
-        <article class="tb-video-card" data-video-id="<?php echo htmlspecialchars($videoId); ?>">
+        <article class="tb-video-card" data-video-id="<?php echo htmlspecialchars($videoId); ?>" data-video-status="production">
             <?php if ($thumb): ?>
                 <img src="<?php echo htmlspecialchars($thumb); ?>" alt="<?php echo htmlspecialchars($video['title']); ?>" class="tb-card-thumb">
             <?php endif; ?>
@@ -76,7 +76,7 @@ $isAdmin = tb_is_admin();
                 $videoId = $m[1];
             }
         ?>
-        <article class="tb-video-card" data-video-id="<?php echo htmlspecialchars($videoId); ?>">
+        <article class="tb-video-card" data-video-id="<?php echo htmlspecialchars($videoId); ?>" data-video-status="released">
             <?php if ($thumb): ?>
                 <img src="<?php echo htmlspecialchars($thumb); ?>" alt="<?php echo htmlspecialchars($video['title']); ?>" class="tb-card-thumb">
             <?php endif; ?>
@@ -99,6 +99,16 @@ $isAdmin = tb_is_admin();
             <button class="tb-modal-close">&times;</button>
             <div class="tb-modal-iframe-container">
                 <iframe id="tbVideoIframe" src="" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+            </div>
+            <div class="tb-video-comment-panel" hidden>
+                <button type="button" class="tb-video-comment-toggle" aria-expanded="false">
+                    <i class="fas fa-comment"></i>
+                    <span>Comment</span>
+                </button>
+                <form class="tb-feed-comment-form" hidden>
+                    <textarea rows="2" placeholder="Write a comment..."></textarea>
+                    <button type="button" class="tb-btn-secondary">Post Comment</button>
+                </form>
             </div>
         </div>
     </div>
