@@ -105,14 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.tbSharedTrackPlayer) {
           window.tbSharedTrackPlayer.pause();
         }
-        // On small screens attempt to enter full screen automatically
-        if (window.innerWidth <= 768 && typeof videoModal.requestFullscreen === 'function') {
-          try {
-            videoModal.requestFullscreen();
-          } catch (err) {
-            // ignore if cannot enter full screen
-          }
-        }
       });
     });
     // close button
@@ -126,6 +118,32 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target === videoModal) {
         videoModal.classList.remove('active');
         videoIframe.src = '';
+      }
+    });
+  }
+
+  var videoCommentModal = document.getElementById('videoCommentModal');
+  var videoCommentTitle = document.getElementById('videoCommentTitle');
+  if (videoCommentModal && videoCommentTitle) {
+    document.querySelectorAll('.tb-video-comment-trigger').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const card = btn.closest('.tb-video-card');
+        const title = card ? card.dataset.videoTitle : '';
+        videoCommentTitle.textContent = title ? `${title} Comments` : 'Comments';
+        videoCommentModal.classList.add('active');
+      });
+    });
+
+    const commentClose = videoCommentModal.querySelector('.tb-modal-close');
+    if (commentClose) {
+      commentClose.addEventListener('click', () => {
+        videoCommentModal.classList.remove('active');
+      });
+    }
+    videoCommentModal.addEventListener('click', (e) => {
+      if (e.target === videoCommentModal) {
+        videoCommentModal.classList.remove('active');
       }
     });
   }
