@@ -32,12 +32,16 @@ $isAdmin = tb_is_admin();
 $unreleasedTrackItems = [];
 $unreleasedCover = $placeholderCover;
 foreach ($unreleased as $song) {
+    $audioPath = $song['mp3_path'] ?? '';
+    if ($audioPath === '' && !empty($song['m4a_path'])) {
+        $audioPath = $song['m4a_path'];
+    }
     if (!empty($song['cover_path']) && $unreleasedCover === $placeholderCover) {
         $unreleasedCover = $song['cover_path'];
     }
     $unreleasedTrackItems[] = [
         'title' => $song['title'],
-        'src' => $song['mp3_path'] ?? '',
+        'src' => $audioPath,
         'cover' => !empty($song['cover_path']) ? $song['cover_path'] : $placeholderCover,
         'has_cover' => !empty($song['cover_path']),
     ];
@@ -49,12 +53,16 @@ $unreleasedTrackCount = count($unreleased);
 $releasedTrackItems = [];
 $releasedCover = $placeholderCover;
 foreach ($releasedSongs as $song) {
+    $audioPath = $song['mp3_path'] ?? '';
+    if ($audioPath === '' && !empty($song['m4a_path'])) {
+        $audioPath = $song['m4a_path'];
+    }
     if (!empty($song['cover_path']) && $releasedCover === $placeholderCover) {
         $releasedCover = $song['cover_path'];
     }
     $releasedTrackItems[] = [
         'title' => $song['title'],
-        'src' => $song['mp3_path'] ?? '',
+        'src' => $audioPath,
         'cover' => !empty($song['cover_path']) ? $song['cover_path'] : $placeholderCover,
         'has_cover' => !empty($song['cover_path']),
         'apple' => $song['apple_music_url'] ?? '',
@@ -85,6 +93,12 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
             <div class="tb-card-list">
                 <?php foreach ($unreleased as $song): ?>
                     <?php $cover = !empty($song['cover_path']) ? $song['cover_path'] : $placeholderCover; ?>
+                    <?php
+                        $audioPath = $song['mp3_path'] ?? '';
+                        if ($audioPath === '' && !empty($song['m4a_path'])) {
+                            $audioPath = $song['m4a_path'];
+                        }
+                    ?>
                     <article class="tb-song-card">
                         <div class="tb-song-media tb-song-media--cover">
                             <img src="<?php echo htmlspecialchars($cover); ?>"
@@ -93,8 +107,8 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
                         </div>
                         <div class="tb-song-body">
                             <h2 class="tb-card-title"><?php echo htmlspecialchars($song['title']); ?></h2>
-                            <?php if (!empty($song['mp3_path'])): ?>
-                                <button class="tb-song-play-btn" data-src="<?php echo htmlspecialchars($song['mp3_path']); ?>"><i class="fas fa-play"></i></button>
+                            <?php if (!empty($audioPath)): ?>
+                                <button class="tb-song-play-btn" data-src="<?php echo htmlspecialchars($audioPath); ?>"><i class="fas fa-play"></i></button>
                             <?php endif; ?>
                         </div>
                     </article>
@@ -111,6 +125,12 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
             <div class="tb-card-list">
                 <?php foreach ($releasedSongs as $song): ?>
                     <?php $cover = !empty($song['cover_path']) ? $song['cover_path'] : $placeholderCover; ?>
+                    <?php
+                        $audioPath = $song['mp3_path'] ?? '';
+                        if ($audioPath === '' && !empty($song['m4a_path'])) {
+                            $audioPath = $song['m4a_path'];
+                        }
+                    ?>
                     <article class="tb-song-card">
                         <div class="tb-song-media tb-song-media--cover">
                             <img src="<?php echo htmlspecialchars($cover); ?>"
@@ -119,8 +139,8 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
                         </div>
                         <div class="tb-song-body">
                             <h2 class="tb-card-title"><?php echo htmlspecialchars($song['title']); ?></h2>
-                            <?php if (!empty($song['mp3_path'])): ?>
-                                <button class="tb-song-play-btn" data-src="<?php echo htmlspecialchars($song['mp3_path']); ?>"><i class="fas fa-play"></i></button>
+                            <?php if (!empty($audioPath)): ?>
+                                <button class="tb-song-play-btn" data-src="<?php echo htmlspecialchars($audioPath); ?>"><i class="fas fa-play"></i></button>
                             <?php endif; ?>
                             <div class="tb-song-links">
                                 <?php if ($showAppleGlobal && !empty($song['apple_music_url'])): ?>

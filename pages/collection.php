@@ -30,9 +30,13 @@ $collectionTracks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $placeholderCover = 'assets/icons/icon-192.png';
 $trackItems = [];
 foreach ($collectionTracks as $track) {
+    $audioPath = $track['mp3_path'] ?? '';
+    if ($audioPath === '' && !empty($track['m4a_path'])) {
+        $audioPath = $track['m4a_path'];
+    }
     $trackItems[] = [
         'title' => $track['title'],
-        'src' => $track['mp3_path'] ?? '',
+        'src' => $audioPath,
         'cover' => !empty($track['cover_path']) ? $track['cover_path'] : $placeholderCover,
     ];
 }
