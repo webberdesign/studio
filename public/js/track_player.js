@@ -239,7 +239,7 @@ const createTrackPlayerInstance = (player) => {
     }
   };
 
-  const nextTrack = () => {
+  const advanceToNextTrack = () => {
     const activeList = getActiveList();
     if (!activeList) return;
     const startIndex = activeIndex === null ? 0 : activeIndex + 1;
@@ -250,7 +250,15 @@ const createTrackPlayerInstance = (player) => {
     );
     if (nextIndex === null) return;
     loadTrack(activeList, nextIndex);
-    if (isPlaying) play();
+    play();
+  };
+
+  const nextTrack = () => {
+    const shouldResume = isPlaying;
+    advanceToNextTrack();
+    if (!shouldResume) {
+      pause();
+    }
   };
 
   const prevTrack = () => {
@@ -330,8 +338,7 @@ const createTrackPlayerInstance = (player) => {
   if (prevBtn) prevBtn.addEventListener("click", prevTrack);
 
   audio.addEventListener("ended", () => {
-    nextTrack();
-    play();
+    advanceToNextTrack();
   });
 
   audio.addEventListener("loadedmetadata", () => {
