@@ -91,6 +91,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const videoModal = document.getElementById('videoModal');
   const videoIframe = document.getElementById('tbVideoIframe');
   if (videoModal && videoIframe) {
+    const commentPanel = videoModal.querySelector('.tb-video-comment-panel');
+    const commentToggle = commentPanel ? commentPanel.querySelector('.tb-video-comment-toggle') : null;
+    const commentForm = commentPanel ? commentPanel.querySelector('.tb-feed-comment-form') : null;
+
+    if (commentToggle && commentForm) {
+      commentToggle.addEventListener('click', () => {
+        const isHidden = commentForm.hasAttribute('hidden');
+        if (isHidden) {
+          commentForm.removeAttribute('hidden');
+          commentToggle.setAttribute('aria-expanded', 'true');
+        } else {
+          commentForm.setAttribute('hidden', '');
+          commentToggle.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+
     // delegate click on play overlays
     document.querySelectorAll('.tb-video-card .tb-play-overlay').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -102,6 +119,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
         videoIframe.src = url;
         videoModal.classList.add('active');
+        if (commentPanel) {
+          const isProduction = card && card.dataset.videoStatus === 'production';
+          commentPanel.hidden = !isProduction;
+          if (commentForm) {
+            commentForm.setAttribute('hidden', '');
+          }
+          if (commentToggle) {
+            commentToggle.setAttribute('aria-expanded', 'false');
+          }
+        }
         if (window.tbSharedTrackPlayer) {
           window.tbSharedTrackPlayer.pause();
         }
@@ -120,12 +147,24 @@ document.addEventListener('DOMContentLoaded', () => {
     closeBtn.addEventListener('click', () => {
       videoModal.classList.remove('active');
       videoIframe.src = '';
+      if (commentForm) {
+        commentForm.setAttribute('hidden', '');
+      }
+      if (commentToggle) {
+        commentToggle.setAttribute('aria-expanded', 'false');
+      }
     });
     // click outside content to close
     videoModal.addEventListener('click', (e) => {
       if (e.target === videoModal) {
         videoModal.classList.remove('active');
         videoIframe.src = '';
+        if (commentForm) {
+          commentForm.setAttribute('hidden', '');
+        }
+        if (commentToggle) {
+          commentToggle.setAttribute('aria-expanded', 'false');
+        }
       }
     });
   }

@@ -103,6 +103,16 @@ $isAdmin = tb_is_admin();
             <div class="tb-modal-iframe-container">
                 <iframe id="tbVideoIframe" src="" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
             </div>
+            <div class="tb-video-comment-panel" hidden>
+                <button type="button" class="tb-video-comment-toggle" aria-expanded="false">
+                    <i class="fas fa-comment"></i>
+                    <span>Comment</span>
+                </button>
+                <form class="tb-feed-comment-form" hidden>
+                    <textarea rows="2" placeholder="Write a comment..."></textarea>
+                    <button type="button" class="tb-btn-secondary">Post Comment</button>
+                </form>
+            </div>
         </div>
     </div>
 
