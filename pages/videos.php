@@ -51,17 +51,19 @@ $isAdmin = tb_is_admin();
             }
         ?>
         <article class="tb-video-card" data-video-id="<?php echo htmlspecialchars($videoId); ?>" data-video-title="<?php echo htmlspecialchars($video['title']); ?>">
-            <?php if ($thumb): ?>
-                <img src="<?php echo htmlspecialchars($thumb); ?>" alt="<?php echo htmlspecialchars($video['title']); ?>" class="tb-card-thumb">
-            <?php endif; ?>
+            <div class="tb-video-media">
+                <?php if ($thumb): ?>
+                    <img src="<?php echo htmlspecialchars($thumb); ?>" alt="<?php echo htmlspecialchars($video['title']); ?>" class="tb-card-thumb">
+                <?php endif; ?>
+                <!-- play overlay inside the card -->
+                <button class="tb-play-overlay"><i class="fas fa-play"></i></button>
+            </div>
             <div class="tb-card-body">
                 <h2 class="tb-card-title"><?php echo htmlspecialchars($video['title']); ?></h2>
                 <button type="button" class="tb-video-comment-trigger" aria-label="Open comments for <?php echo htmlspecialchars($video['title']); ?>">
                     <i class="fas fa-comment"></i>
                 </button>
             </div>
-            <!-- play overlay inside the card -->
-            <button class="tb-play-overlay"><i class="fas fa-play"></i></button>
         </article>
         <?php /* editing disabled in public view */ ?>
         <?php endforeach; ?>
@@ -80,14 +82,16 @@ $isAdmin = tb_is_admin();
             }
         ?>
         <article class="tb-video-card" data-video-id="<?php echo htmlspecialchars($videoId); ?>" data-video-title="<?php echo htmlspecialchars($video['title']); ?>">
-            <?php if ($thumb): ?>
-                <img src="<?php echo htmlspecialchars($thumb); ?>" alt="<?php echo htmlspecialchars($video['title']); ?>" class="tb-card-thumb">
-            <?php endif; ?>
+            <div class="tb-video-media">
+                <?php if ($thumb): ?>
+                    <img src="<?php echo htmlspecialchars($thumb); ?>" alt="<?php echo htmlspecialchars($video['title']); ?>" class="tb-card-thumb">
+                <?php endif; ?>
+                <!-- play overlay inside the card -->
+                <button class="tb-play-overlay"><i class="fas fa-play"></i></button>
+            </div>
             <div class="tb-card-body">
                 <h2 class="tb-card-title"><?php echo htmlspecialchars($video['title']); ?></h2>
             </div>
-            <!-- play overlay inside the card -->
-            <button class="tb-play-overlay"><i class="fas fa-play"></i></button>
         </article>
         <?php /* editing disabled in public view */ ?>
         <?php endforeach; ?>
@@ -98,10 +102,10 @@ $isAdmin = tb_is_admin();
 
     <!-- Modal for video playback -->
     <div id="videoModal" class="tb-video-modal">
-        <div class="tb-modal-content">
+        <div class="tb-modal-content tb-video-modal-content">
             <button class="tb-modal-close">&times;</button>
             <div class="tb-modal-iframe-container">
-                <iframe id="tbVideoIframe" src="" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+                <iframe id="tbVideoIframe" src="" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
             </div>
             <div class="tb-video-comment-panel" hidden>
                 <button type="button" class="tb-video-comment-toggle" aria-expanded="false">
@@ -113,32 +117,6 @@ $isAdmin = tb_is_admin();
                     <button type="button" class="tb-btn-secondary">Post Comment</button>
                 </form>
             </div>
-        </div>
-    </div>
-
-    <div id="videoCommentModal" class="tb-video-modal tb-video-comment-modal">
-        <div class="tb-modal-content tb-video-comment-content">
-            <button class="tb-modal-close" type="button">&times;</button>
-            <div class="tb-video-comment-header">
-                <h3 id="videoCommentTitle">Comments</h3>
-            </div>
-            <form class="tb-feed-comment-form">
-                <textarea rows="2" placeholder="Write a comment..."></textarea>
-                <button type="button" class="tb-btn-secondary">Post Comment</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="videoCommentModal" class="tb-video-modal tb-video-comment-modal">
-        <div class="tb-modal-content tb-video-comment-content">
-            <button class="tb-modal-close" type="button">&times;</button>
-            <div class="tb-video-comment-header">
-                <h3 id="videoCommentTitle">Comments</h3>
-            </div>
-            <form class="tb-feed-comment-form">
-                <textarea rows="2" placeholder="Write a comment..."></textarea>
-                <button type="button" class="tb-btn-secondary">Post Comment</button>
-            </form>
         </div>
     </div>
 

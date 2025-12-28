@@ -1255,6 +1255,10 @@ body.tb-body {
   flex-direction: column;
 }
 
+.tb-video-media {
+  position: relative;
+}
+
 .tb-video-card .tb-card-body {
   position: relative;
   z-index: 2;
@@ -1321,6 +1325,11 @@ body.tb-body {
 
 .tb-video-modal.active {
   display: flex;
+}
+
+.tb-video-modal-content {
+  width: min(96vw, 1200px);
+  max-width: 1200px;
 }
 
 /*  SECTION: Songs Pane */
