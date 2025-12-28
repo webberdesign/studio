@@ -48,7 +48,7 @@ $trackItemsJson = htmlspecialchars(json_encode($trackItems), ENT_QUOTES, 'UTF-8'
 ?>
 
 <section class="tb-section">
-    <div class="tb-tracklist" data-tracklist data-tracks="<?php echo $trackItemsJson; ?>">
+    <div class="tb-tracklist" data-tracklist data-tracklist-id="collection-<?php echo $collectionId; ?>" data-tracks="<?php echo $trackItemsJson; ?>">
         <div class="tb-tracklist-header">
             <img src="<?php echo htmlspecialchars($coverImage); ?>" alt="<?php echo htmlspecialchars($collection['name']); ?>" class="tb-tracklist-cover">
             <div class="tb-tracklist-meta">

@@ -102,6 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
         videoIframe.src = url;
         videoModal.classList.add('active');
+        if (window.tbSharedTrackPlayer) {
+          window.tbSharedTrackPlayer.pause();
+        }
         // On small screens attempt to enter full screen automatically
         if (window.innerWidth <= 768 && typeof videoModal.requestFullscreen === 'function') {
           try {
