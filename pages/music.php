@@ -108,7 +108,7 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
     <!-- Unreleased Songs -->
     <div id="tbSongsUnreleased" class="tb-songs-pane tb-tracklist-pane">
         <?php if (!empty($unreleased)): ?>
-            <div class="tb-tracklist" data-tracklist data-tracks="<?php echo $unreleasedTrackItemsJson; ?>">
+            <div class="tb-tracklist" data-tracklist data-tracklist-id="unreleased" data-tracks="<?php echo $unreleasedTrackItemsJson; ?>">
                 <div class="tb-tracklist-rows">
                     <?php foreach ($unreleased as $index => $song): ?>
                         <?php $cover = !empty($song['cover_path']) ? $song['cover_path'] : $placeholderCover; ?>
@@ -132,7 +132,7 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
     <!-- Released Songs -->
     <div id="tbSongsReleased" class="tb-songs-pane active tb-tracklist-pane">
         <?php if (!empty($releasedSongs)): ?>
-            <div class="tb-tracklist" data-tracklist data-tracks="<?php echo $releasedTrackItemsJson; ?>">
+            <div class="tb-tracklist" data-tracklist data-tracklist-id="released" data-tracks="<?php echo $releasedTrackItemsJson; ?>">
                 <div class="tb-tracklist-rows">
                     <?php foreach ($releasedSongs as $index => $song): ?>
                         <?php $cover = !empty($song['cover_path']) ? $song['cover_path'] : $placeholderCover; ?>
