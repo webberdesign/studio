@@ -375,6 +375,12 @@ if ($cacheable) {
     tb_cache_write($cacheKey, $renderedOutput);
 }
 echo $renderedOutput;
+<?php
+$renderedOutput = ob_get_clean();
+if ($cacheable) {
+    tb_cache_write($cacheKey, $renderedOutput);
+}
+echo $renderedOutput;
 
 <?php
 $yearlyViews = [

@@ -316,6 +316,70 @@ const initPageInteractions = (root = document) => {
       content.style.display = 'block';
     }
   });
+
+  const toggleBtn = scope.querySelector('#tbFeedToggle');
+  const form = scope.querySelector('#tbFeedPostForm');
+  if (toggleBtn && form) {
+    toggleBtn.addEventListener('click', () => {
+      const isHidden = form.hasAttribute('hidden');
+      if (isHidden) {
+        form.removeAttribute('hidden');
+        toggleBtn.classList.add('active');
+        const label = toggleBtn.querySelector('span');
+        if (label) label.textContent = 'Hide Form';
+      } else {
+        form.setAttribute('hidden', '');
+        toggleBtn.classList.remove('active');
+        const label = toggleBtn.querySelector('span');
+        if (label) label.textContent = 'New Post';
+      }
+    });
+  }
+
+  const modal = scope.querySelector('#tbFeedModal');
+  const modalImg = scope.querySelector('#tbFeedModalImage');
+  const modalClose = scope.querySelector('#tbFeedModalClose');
+
+  const closeModal = () => {
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    if (modalImg) modalImg.src = '';
+  };
+
+  scope.querySelectorAll('.tb-feed-image').forEach((button) => {
+    button.addEventListener('click', () => {
+      const src = button.getAttribute('data-image-src');
+      if (modal && modalImg && src) {
+        modalImg.src = src;
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+      }
+    });
+  });
+
+  if (modal) {
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) {
+        closeModal();
+      }
+    });
+  }
+  if (modalClose) {
+    modalClose.addEventListener('click', closeModal);
+  }
+  if (!window.tbFeedModalKeyHandler) {
+    window.tbFeedModalKeyHandler = true;
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      const activeModal = document.getElementById('tbFeedModal');
+      const activeImg = document.getElementById('tbFeedModalImage');
+      if (!activeModal) return;
+      activeModal.classList.remove('is-open');
+      activeModal.setAttribute('aria-hidden', 'true');
+      if (activeImg) activeImg.src = '';
+    });
+  }
 };
 
 const showPageLoading = (message = 'Loading…') => {

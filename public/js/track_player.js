@@ -146,6 +146,9 @@ const createTrackPlayerInstance = (player) => {
   const loadTrack = (list, index) => {
     if (!list) return;
     if (index < 0 || index >= list.tracks.length) return;
+    if (!audio.paused) {
+      audio.pause();
+    }
     activeListId = list.id;
     activeIndex = index;
     const track = list.tracks[index];
@@ -312,7 +315,8 @@ const createTrackPlayerInstance = (player) => {
     attachRowHandlers();
 
     const hasTracks = tracklists.some((list) => list.tracks.length > 0);
-    if (!hasTracks && !isPlaying) {
+    const hasSavedState = Boolean(sessionStorage.getItem(TRACK_PLAYER_STATE_KEY));
+    if (!hasTracks && !isPlaying && !hasSavedState) {
       player.style.display = "none";
       return;
     }
