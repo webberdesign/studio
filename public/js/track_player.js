@@ -29,6 +29,7 @@ const initTracklistPlayer = (container) => {
   const playBtn = player.querySelector("[data-track-play]");
   const nextBtn = player.querySelector("[data-track-next]");
   const currentLabel = player.querySelector("[data-track-current]");
+  const currentFile = player.querySelector("[data-track-file]");
   const coverImg = player.querySelector("[data-track-cover]");
   const playIcon = playBtn ? playBtn.querySelector("svg path") : null;
 
@@ -46,6 +47,20 @@ const initTracklistPlayer = (container) => {
     const track = tracks[currentIndex];
     if (!track) return;
     if (currentLabel) currentLabel.textContent = track.title;
+    if (currentFile) {
+      if (track.src) {
+        let filename = track.src;
+        try {
+          const url = new URL(track.src, window.location.href);
+          filename = url.pathname.split("/").pop() || track.src;
+        } catch (error) {
+          filename = track.src.split("/").pop() || track.src;
+        }
+        currentFile.textContent = decodeURIComponent(filename);
+      } else {
+        currentFile.textContent = "";
+      }
+    }
     if (coverImg) {
       coverImg.src = track.cover || "assets/icons/icon-192.png";
     }
@@ -90,11 +105,18 @@ const initTracklistPlayer = (container) => {
       loadTrack(firstPlayable);
     }
     if (!audio.src) return;
-    audio.play();
+    const playPromise = audio.play();
     isPlaying = true;
     player.classList.remove("is-hidden");
     updatePlayIcon(true);
     updateRows();
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch(() => {
+        isPlaying = false;
+        updatePlayIcon(false);
+        updateRows();
+      });
+    }
   };
 
   const pause = () => {
