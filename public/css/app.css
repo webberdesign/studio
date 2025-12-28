@@ -505,7 +505,7 @@ body.tb-body {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 0.8rem;
   border: 1px solid rgba(148, 163, 184, 0.25);
   background: var(--tb-bg-elevated);
@@ -544,6 +544,7 @@ body.tb-body {
   display: flex;
   align-items: center;
   gap: 0.8rem;
+  flex: 1;
   min-width: 0;
 }
 
@@ -562,12 +563,14 @@ body.tb-body {
   color: var(--tb-muted);
   font-size: 0.85rem;
   min-width: 2.5rem;
+  text-align: left;
 }
 
 .tb-track-title {
   font-size: 1rem;
   font-weight: 600;
   color: var(--tb-text);
+  text-align: left;
 }
 
 .tb-track-player.is-hidden {
@@ -640,10 +643,21 @@ body.tb-body {
   max-width: 45vw;
 }
 
+.tb-track-player-file {
+  font-size: 0.75rem;
+  color: var(--tb-muted);
+  margin-top: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 45vw;
+}
+
 .tb-track-player-controls {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: nowrap;
 }
 
 .tb-track-control {
@@ -696,7 +710,15 @@ body.tb-body {
     column-gap: 0.75rem;
   }
 
+  .tb-track-player-info {
+    min-width: 0;
+  }
+
   .tb-track-player-title {
+    max-width: 100%;
+  }
+
+  .tb-track-player-file {
     max-width: 100%;
   }
 

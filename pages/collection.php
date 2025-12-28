@@ -60,11 +60,11 @@ $trackItemsJson = htmlspecialchars(json_encode($trackItems), ENT_QUOTES, 'UTF-8'
             <div class="tb-tracklist-rows">
                 <?php foreach ($collectionTracks as $index => $track): ?>
                     <button type="button" class="tb-track-row" data-track-index="<?php echo $index; ?>">
+                        <span class="tb-track-number"><?php echo str_pad($index + 1, 2, '0', STR_PAD_LEFT); ?></span>
                         <span class="tb-track-cover-wrap">
                             <img src="<?php echo htmlspecialchars(!empty($track['cover_path']) ? $track['cover_path'] : $placeholderCover); ?>" alt="" class="tb-track-cover<?php echo empty($track['cover_path']) ? ' is-placeholder' : ''; ?>">
                         </span>
                         <span class="tb-track-main">
-                            <span class="tb-track-number"><?php echo str_pad($index + 1, 2, '0', STR_PAD_LEFT); ?></span>
                             <span class="tb-track-title"><?php echo htmlspecialchars($track['title']); ?></span>
                         </span>
                     </button>
@@ -76,6 +76,7 @@ $trackItemsJson = htmlspecialchars(json_encode($trackItems), ENT_QUOTES, 'UTF-8'
                     <div>
                         <div class="tb-track-player-label">Now playing</div>
                         <div class="tb-track-player-title" data-track-current>Select a track</div>
+                        <div class="tb-track-player-file" data-track-file></div>
                     </div>
                 </div>
                 <div class="tb-track-player-controls">
