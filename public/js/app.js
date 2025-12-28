@@ -168,7 +168,7 @@ const initPageInteractions = (root = document) => {
         const id = card ? card.dataset.videoId : null;
         if (!id) return;
         // build embed url
-        const url = `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+        const url = `https://www.youtube.com/embed/${id}?autoplay=1&playsinline=1&rel=0`;
         videoIframe.src = url;
         videoModal.classList.add('active');
         if (commentPanel) {
