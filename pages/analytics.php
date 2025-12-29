@@ -29,6 +29,10 @@ require_once __DIR__ . '/../config.php';
             <i class="fas fa-mobile-screen-button"></i>
             <span>TB MusicBox App</span>
         </a>
+        <a href="?page=analytics-shop" class="tb-analytics-link" data-loading-message="Loading Latest Analytics">
+            <i class="fas fa-bag-shopping"></i>
+            <span>Titty Bingo Shop</span>
+        </a>
         <a href="?page=analytics-ig" class="tb-analytics-link" data-loading-message="Loading Latest Analytics">
             <i class="fab fa-instagram"></i>
             <span>Instagram Analytics</span>
