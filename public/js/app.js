@@ -349,6 +349,8 @@ const initPageInteractions = (root = document) => {
     { loadingId: 'ga-loading', contentId: 'ga-content' },
     { loadingId: 'sp-loading', contentId: 'sp-content' },
     { loadingId: 'app-loading', contentId: 'app-content' },
+    { loadingId: 'ig-loading', contentId: 'ig-content' },
+    { loadingId: 'fb-loading', contentId: 'fb-content' },
   ];
 
   analyticsLoadingPairs.forEach(({ loadingId, contentId }) => {
