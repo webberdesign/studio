@@ -218,12 +218,25 @@ const initPageInteractions = (root = document) => {
   const videoCommentModal = scope.querySelector('#videoCommentModal');
   const videoCommentTitle = scope.querySelector('#videoCommentTitle');
   if (videoCommentModal && videoCommentTitle) {
+    const commentForm = videoCommentModal.querySelector('.tb-feed-comment-form');
+    const commentVideoId = commentForm ? commentForm.querySelector('input[name="video_id"]') : null;
+    const commentThreads = videoCommentModal.querySelectorAll('.tb-video-comment-thread');
+
     scope.querySelectorAll('.tb-video-comment-trigger').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const card = btn.closest('.tb-video-card');
         const title = card ? card.dataset.videoTitle : '';
+        const dbId = card ? card.dataset.videoDbId : '';
         videoCommentTitle.textContent = title ? `${title} Comments` : 'Comments';
+        if (commentVideoId) {
+          commentVideoId.value = dbId || '';
+        }
+        if (commentThreads.length) {
+          commentThreads.forEach(thread => {
+            thread.hidden = thread.dataset.videoId !== dbId;
+          });
+        }
         videoCommentModal.classList.add('active');
       });
     });

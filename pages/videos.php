@@ -14,6 +14,17 @@ function tb_youtube_thumb(string $url): ?string {
     return null;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['add_video_comment']) && !empty($_POST['video_id'])) {
+        $videoId = (int) $_POST['video_id'];
+        $comment = trim($_POST['comment_body'] ?? '');
+        if ($comment !== '') {
+            $stmt = $pdo->prepare("INSERT INTO tb_video_comments (video_id, author_name, body) VALUES (?, ?, ?)");
+            $stmt->execute([$videoId, 'Dahr', $comment]);
+        }
+    }
+}
+
 // fetch all videos and separate released vs in production by order
 $stmt = $pdo->query("SELECT * FROM tb_videos ORDER BY position ASC, created_at DESC");
 $videos = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -25,6 +36,17 @@ foreach ($videos as $video) {
         $released[] = $video;
     } else {
         $production[] = $video;
+    }
+}
+
+$videoCommentThreads = [];
+if (!empty($videos)) {
+    $videoIds = array_map('intval', array_column($videos, 'id'));
+    $placeholders = implode(',', array_fill(0, count($videoIds), '?'));
+    $commentsStmt = $pdo->prepare("SELECT * FROM tb_video_comments WHERE video_id IN ($placeholders) ORDER BY created_at ASC");
+    $commentsStmt->execute($videoIds);
+    foreach ($commentsStmt->fetchAll(PDO::FETCH_ASSOC) as $comment) {
+        $videoCommentThreads[$comment['video_id']][] = $comment;
     }
 }
 
@@ -50,7 +72,7 @@ $isAdmin = tb_is_admin();
                 $videoId = $m[1];
             }
         ?>
-        <article class="tb-video-card" data-video-id="<?php echo htmlspecialchars($videoId); ?>" data-video-title="<?php echo htmlspecialchars($video['title']); ?>">
+        <article class="tb-video-card" data-video-id="<?php echo htmlspecialchars($videoId); ?>" data-video-db-id="<?php echo (int) $video['id']; ?>" data-video-title="<?php echo htmlspecialchars($video['title']); ?>">
             <div class="tb-video-media">
                 <?php if ($thumb): ?>
                     <img src="<?php echo htmlspecialchars($thumb); ?>" alt="<?php echo htmlspecialchars($video['title']); ?>" class="tb-card-thumb">
@@ -81,7 +103,7 @@ $isAdmin = tb_is_admin();
                 $videoId = $m[1];
             }
         ?>
-        <article class="tb-video-card" data-video-id="<?php echo htmlspecialchars($videoId); ?>" data-video-title="<?php echo htmlspecialchars($video['title']); ?>">
+        <article class="tb-video-card" data-video-id="<?php echo htmlspecialchars($videoId); ?>" data-video-db-id="<?php echo (int) $video['id']; ?>" data-video-title="<?php echo htmlspecialchars($video['title']); ?>">
             <div class="tb-video-media">
                 <?php if ($thumb): ?>
                     <img src="<?php echo htmlspecialchars($thumb); ?>" alt="<?php echo htmlspecialchars($video['title']); ?>" class="tb-card-thumb">
@@ -126,9 +148,34 @@ $isAdmin = tb_is_admin();
             <div class="tb-video-comment-header">
                 <h3 id="videoCommentTitle">Comments</h3>
             </div>
-            <form class="tb-feed-comment-form">
-                <textarea rows="2" placeholder="Write a comment..."></textarea>
-                <button type="button" class="tb-btn-secondary">Post Comment</button>
+            <div class="tb-feed-comments">
+                <h4>Comments</h4>
+                <?php if (empty($production)): ?>
+                    <p class="tb-muted">No comments yet.</p>
+                <?php else: ?>
+                    <?php foreach ($production as $video): ?>
+                        <?php $comments = $videoCommentThreads[$video['id']] ?? []; ?>
+                        <div class="tb-video-comment-thread" data-video-id="<?php echo (int) $video['id']; ?>" hidden>
+                            <?php if (empty($comments)): ?>
+                                <p class="tb-muted">No comments yet.</p>
+                            <?php else: ?>
+                                <ul>
+                                    <?php foreach ($comments as $comment): ?>
+                                        <li>
+                                            <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Dahr'); ?>:</strong>
+                                            <?php echo nl2br(htmlspecialchars($comment['body'])); ?>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+            <form method="post" class="tb-feed-comment-form">
+                <input type="hidden" name="video_id" value="">
+                <textarea name="comment_body" rows="2" required placeholder="Write a comment..."></textarea>
+                <button type="submit" name="add_video_comment" class="tb-btn-secondary">Post Comment</button>
             </form>
         </div>
     </div>

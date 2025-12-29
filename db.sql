@@ -73,3 +73,15 @@ CREATE TABLE tb_feed_comments (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (post_id) REFERENCES tb_feed_posts(id) ON DELETE CASCADE
 );
+
+/*
+ * Video comments for in-production videos.
+ */
+CREATE TABLE tb_video_comments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  video_id INT NOT NULL,
+  author_name VARCHAR(100) DEFAULT NULL,
+  body TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (video_id) REFERENCES tb_videos(id) ON DELETE CASCADE
+);
