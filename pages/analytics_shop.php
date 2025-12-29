@@ -3,285 +3,127 @@
     SECTION: Titty Bingo Shop Analytics (WooCommerce)
 ------------------------------------------------------------*/
 require_once __DIR__ . '/../config.php';
-
-function tb_format_currency($amount, $currency) {
-    $symbols = [
-        'USD' => '$',
-        'EUR' => '€',
-        'GBP' => '£',
-        'AUD' => 'A$',
-        'CAD' => 'C$',
-    ];
-    $prefix = $symbols[$currency] ?? '';
-    $formatted = number_format((float) $amount, 2);
-    return $prefix !== '' ? $prefix . $formatted : $formatted . ($currency ? ' ' . $currency : '');
-}
-
-function tb_order_timestamp(array $order) {
-    $dateString = $order['date_created']
-        ?? $order['date_created_gmt']
-        ?? $order['date']
-        ?? $order['created_at']
-        ?? null;
-    if (!$dateString) {
-        return null;
-    }
-    $timestamp = strtotime($dateString);
-    return $timestamp !== false ? $timestamp : null;
-}
-
-function tb_normalize_url_path($path) {
-    $segments = [];
-    foreach (explode('/', $path) as $segment) {
-        if ($segment === '' || $segment === '.') {
-            continue;
-        }
-        if ($segment === '..') {
-            array_pop($segments);
-            continue;
-        }
-        $segments[] = $segment;
-    }
-
-    return '/' . implode('/', $segments);
-}
-
-function tb_decode_wc_response($response) {
-    $trimmed = trim($response);
-    if ($trimmed === '') {
-        return null;
-    }
-
-    $decoded = json_decode($trimmed, true);
-    if (is_array($decoded)) {
-        return $decoded;
-    }
-
-    $firstBrace = strcspn($trimmed, '[{');
-    if ($firstBrace < strlen($trimmed)) {
-        $decoded = json_decode(substr($trimmed, $firstBrace), true);
-        if (is_array($decoded)) {
-            return $decoded;
-        }
-    }
-
-    return null;
-}
-
-function tb_fetch_wc_orders() {
-    $host = $_SERVER['HTTP_HOST'] ?? '';
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $endpointPath = '/wc-orders.php';
-    $baseUrl = $host ? $scheme . '://' . $host : '';
-    $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
-    $scriptDir = rtrim(dirname($scriptName), '/');
-
-    $candidateUrls = [];
-    if ($baseUrl !== '') {
-        $candidateUrls[] = $baseUrl . $endpointPath;
-        if ($scriptDir !== '' && $scriptDir !== '.') {
-            $candidateUrls[] = $baseUrl . tb_normalize_url_path($scriptDir . '/../../wc-orders.php');
-        }
-    } else {
-        $candidateUrls[] = $endpointPath;
-        $candidateUrls[] = '../../wc-orders.php';
-    }
-
-    $context = stream_context_create([
-        'http' => [
-            'timeout' => 6,
-        ],
-    ]);
-
-    $response = false;
-    foreach ($candidateUrls as $candidateUrl) {
-        $response = @file_get_contents($candidateUrl, false, $context);
-        if ($response !== false) {
-            break;
-        }
-    }
-    if ($response === false) {
-        return [
-            'orders' => [],
-            'error' => 'Unable to reach WooCommerce order feed.',
-        ];
-    }
-
-    $decoded = tb_decode_wc_response($response);
-    if (!is_array($decoded)) {
-        return [
-            'orders' => [],
-            'error' => 'WooCommerce order feed returned an unexpected response.',
-        ];
-    }
-
-    return [
-        'orders' => $decoded['orders'] ?? $decoded,
-        'error' => null,
-    ];
-}
-
-function tb_collect_stats(array $orders, $sinceTimestamp = null) {
-    $filtered = array_filter($orders, function ($order) use ($sinceTimestamp) {
-        return $sinceTimestamp === null || $order['date'] >= $sinceTimestamp;
-    });
-
-    $count = count($filtered);
-    $revenue = 0.0;
-    $items = 0;
-    foreach ($filtered as $order) {
-        $revenue += $order['total'];
-        $items += $order['items'];
-    }
-
-    $average = $count > 0 ? $revenue / $count : 0.0;
-
-    return [
-        'count' => $count,
-        'revenue' => $revenue,
-        'items' => $items,
-        'average' => $average,
-    ];
-}
-
-$payload = tb_fetch_wc_orders();
-$rawOrders = is_array($payload['orders']) ? $payload['orders'] : [];
-$error = $payload['error'];
-
-$excludedStatuses = ['failed', 'refunded', 'cancelled', 'canceled', 'reversed'];
-$orders = [];
-$defaultCurrency = 'USD';
-
-foreach ($rawOrders as $order) {
-    if (!is_array($order)) {
-        continue;
-    }
-
-    $status = strtolower($order['status'] ?? '');
-    if ($status && in_array($status, $excludedStatuses, true)) {
-        continue;
-    }
-
-    $timestamp = tb_order_timestamp($order);
-    if (!$timestamp) {
-        continue;
-    }
-
-    $lineItems = $order['line_items'] ?? [];
-    $itemCount = 0;
-    if (is_array($lineItems)) {
-        foreach ($lineItems as $item) {
-            if (!is_array($item)) {
-                continue;
-            }
-            $itemCount += (int) ($item['quantity'] ?? $item['qty'] ?? 0);
-        }
-    }
-
-    $billing = $order['billing'] ?? [];
-    $customerName = trim(($billing['first_name'] ?? '') . ' ' . ($billing['last_name'] ?? ''));
-    if ($customerName === '') {
-        $customerName = $order['customer_name'] ?? 'Guest';
-    }
-
-    $currency = $order['currency'] ?? $order['currency_code'] ?? $defaultCurrency;
-
-    $orders[] = [
-        'number' => $order['number'] ?? $order['id'] ?? '—',
-        'date' => $timestamp,
-        'total' => (float) ($order['total'] ?? $order['order_total'] ?? 0),
-        'currency' => $currency,
-        'customer' => $customerName,
-        'items' => $itemCount,
-    ];
-}
-
-if (!empty($orders) && !empty($orders[0]['currency'])) {
-    $defaultCurrency = $orders[0]['currency'];
-}
-
-usort($orders, function ($a, $b) {
-    return $b['date'] <=> $a['date'];
-});
-
-$now = time();
-$stats = [
-    '7' => tb_collect_stats($orders, strtotime('-7 days', $now)),
-    '30' => tb_collect_stats($orders, strtotime('-30 days', $now)),
-    '90' => tb_collect_stats($orders, strtotime('-90 days', $now)),
-    '365' => tb_collect_stats($orders, strtotime('-365 days', $now)),
-    'all' => tb_collect_stats($orders, null),
-];
-
-$recentOrders = array_slice($orders, 0, 10);
 ?>
 <section class="tb-section">
     <a href="index.php?page=analytics" class="tb-btn-secondary tb-back-link" data-loading-message="Loading Latest Analytics"><i class="fas fa-arrow-left"></i> Back to Analytics</a>
     <h1 class="tb-title">Titty Bingo Shop</h1>
     <p class="tb-subtitle">WooCommerce order performance and recent sales activity.</p>
+    <div id="shop-loading" class="tb-loading">Loading Latest Analytics</div>
+    <div id="shop-error" class="tb-alert" style="display:none;"></div>
 
-    <?php if ($error) : ?>
-        <div class="tb-alert"><?php echo htmlspecialchars($error); ?></div>
-    <?php endif; ?>
-
-    <div class="tb-stats-grid">
+    <div class="tb-stats-grid" id="shop-stats" style="display:none;">
         <div class="tb-stat-card">
             <h3>Last 7 Days</h3>
-            <div class="tb-stat-value"><?php echo number_format($stats['7']['count']); ?> orders</div>
-            <div class="tb-stat-meta"><?php echo tb_format_currency($stats['7']['revenue'], $defaultCurrency); ?> revenue</div>
+            <div class="tb-stat-value" id="s7">—</div>
         </div>
         <div class="tb-stat-card">
             <h3>Last 30 Days</h3>
-            <div class="tb-stat-value"><?php echo number_format($stats['30']['count']); ?> orders</div>
-            <div class="tb-stat-meta"><?php echo tb_format_currency($stats['30']['revenue'], $defaultCurrency); ?> revenue</div>
+            <div class="tb-stat-value" id="s30">—</div>
         </div>
         <div class="tb-stat-card">
             <h3>Last 90 Days</h3>
-            <div class="tb-stat-value"><?php echo number_format($stats['90']['count']); ?> orders</div>
-            <div class="tb-stat-meta"><?php echo tb_format_currency($stats['90']['revenue'], $defaultCurrency); ?> revenue</div>
+            <div class="tb-stat-value" id="s90">—</div>
         </div>
         <div class="tb-stat-card">
             <h3>Last 12 Months</h3>
-            <div class="tb-stat-value"><?php echo number_format($stats['365']['count']); ?> orders</div>
-            <div class="tb-stat-meta"><?php echo tb_format_currency($stats['365']['revenue'], $defaultCurrency); ?> revenue</div>
+            <div class="tb-stat-value" id="s365">—</div>
         </div>
         <div class="tb-stat-card tb-stat-card--highlight">
             <h3>All-Time Orders</h3>
-            <div class="tb-stat-value"><?php echo number_format($stats['all']['count']); ?> total</div>
-            <div class="tb-stat-meta"><?php echo tb_format_currency($stats['all']['revenue'], $defaultCurrency); ?> total revenue</div>
+            <div class="tb-stat-value" id="sall">—</div>
         </div>
     </div>
 
-    <div class="tb-shop-summary">
+    <div class="tb-shop-summary" id="shop-summary" style="display:none;">
         <div class="tb-stat-card">
             <h3>All-Time Average Order</h3>
-            <div class="tb-stat-value"><?php echo tb_format_currency($stats['all']['average'], $defaultCurrency); ?></div>
+            <div class="tb-stat-value" id="savg">—</div>
         </div>
         <div class="tb-stat-card">
             <h3>Total Items Sold</h3>
-            <div class="tb-stat-value"><?php echo number_format($stats['all']['items']); ?></div>
+            <div class="tb-stat-value" id="sitems">—</div>
         </div>
     </div>
 
-    <div class="tb-order-section">
+    <div class="tb-order-section" id="shop-orders" style="display:none;">
         <h2 class="tb-section-title">Recent Orders</h2>
-        <?php if (empty($recentOrders)) : ?>
-            <p class="tb-muted">No recent orders to show yet.</p>
-        <?php else : ?>
-            <div class="tb-order-list">
-                <?php foreach ($recentOrders as $order) : ?>
-                    <div class="tb-order-row">
-                        <div>
-                            <div class="tb-order-title">Order #<?php echo htmlspecialchars($order['number']); ?></div>
-                            <div class="tb-order-sub"><?php echo htmlspecialchars($order['customer']); ?></div>
-                        </div>
-                        <div class="tb-order-meta">
-                            <div class="tb-order-amount"><?php echo tb_format_currency($order['total'], $order['currency'] ?? $defaultCurrency); ?></div>
-                            <div class="tb-order-date"><?php echo date('M j, Y', $order['date']); ?></div>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
+        <div class="tb-order-list" id="recent-orders"></div>
     </div>
 </section>
+<script>
+const ENDPOINT = '/wc-analytics-orders.php';
+
+function money(value, currency = 'USD') {
+    const map = {USD: '$', EUR: '€', GBP: '£', AUD: 'A$', CAD: 'C$'};
+    return `${map[currency] || ''}${value.toFixed(2)}`;
+}
+
+function stats(orders, days = null) {
+    const since = days ? (Date.now() / 1000 - days * 86400) : 0;
+    const filtered = orders.filter(order => order.date >= since);
+    const revenue = filtered.reduce((total, order) => total + order.total, 0);
+    const items = filtered.reduce((total, order) => total + order.items, 0);
+    return {
+        count: filtered.length,
+        revenue,
+        items,
+        avg: filtered.length ? revenue / filtered.length : 0
+    };
+}
+
+const loadingEl = document.getElementById('shop-loading');
+const errorEl = document.getElementById('shop-error');
+const statsEl = document.getElementById('shop-stats');
+const summaryEl = document.getElementById('shop-summary');
+const ordersEl = document.getElementById('shop-orders');
+
+fetch(ENDPOINT)
+    .then(response => response.json())
+    .then(data => {
+        const orders = data.orders || [];
+        if (!orders.length) {
+            loadingEl.textContent = 'No orders returned yet.';
+            return;
+        }
+
+        const currency = orders[0].currency || 'USD';
+        const s7 = stats(orders, 7);
+        const s30 = stats(orders, 30);
+        const s90 = stats(orders, 90);
+        const s365 = stats(orders, 365);
+        const all = stats(orders);
+
+        document.getElementById('s7').innerHTML = `${s7.count} orders<br>${money(s7.revenue, currency)}`;
+        document.getElementById('s30').innerHTML = `${s30.count} orders<br>${money(s30.revenue, currency)}`;
+        document.getElementById('s90').innerHTML = `${s90.count} orders<br>${money(s90.revenue, currency)}`;
+        document.getElementById('s365').innerHTML = `${s365.count} orders<br>${money(s365.revenue, currency)}`;
+        document.getElementById('sall').innerHTML = `${all.count} orders<br>${money(all.revenue, currency)}`;
+        document.getElementById('savg').textContent = money(all.avg, currency);
+        document.getElementById('sitems').textContent = all.items.toLocaleString();
+
+        const recent = orders.slice(0, 10);
+        const wrap = document.getElementById('recent-orders');
+        wrap.innerHTML = recent.map(order => `
+            <div class="tb-order-row">
+                <div>
+                    <div class="tb-order-title">Order #${order.number}</div>
+                    <div class="tb-order-sub">${order.customer}</div>
+                </div>
+                <div class="tb-order-meta">
+                    <div class="tb-order-amount">${money(order.total, order.currency || currency)}</div>
+                    <div class="tb-order-date">${new Date(order.date * 1000).toLocaleDateString()}</div>
+                </div>
+            </div>
+        `).join('');
+
+        loadingEl.style.display = 'none';
+        statsEl.style.display = 'grid';
+        summaryEl.style.display = 'grid';
+        ordersEl.style.display = 'block';
+    })
+    .catch(() => {
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'block';
+        errorEl.textContent = 'Unable to reach WooCommerce order feed.';
+    });
+</script>
