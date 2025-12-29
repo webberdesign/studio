@@ -19,6 +19,20 @@ let isReady = false;
 let isPlaying = false;
 let nextTrackTimeout = null;
 let progressInterval = null;
+const logEvent = (event, extra = {}) => {
+  const track = tracks[currentIndex];
+  console.debug('[vibe-player]', event, {
+    index: currentIndex,
+    title: track?.title,
+    src: track?.src,
+    time: audio.currentTime,
+    duration: audio.duration,
+    readyState: audio.readyState,
+    networkState: audio.networkState,
+    paused: audio.paused,
+    ...extra,
+  });
+};
 
 // Path data for Font Awesome icons (play, pause) used in our inline SVGs.
 const PLAY_PATH = "M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80L0 432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z";
@@ -259,7 +273,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   // Handle audio events
   audio.addEventListener('ended', () => {
+    logEvent('ended');
     nextTrack();
+  });
+  audio.addEventListener('error', () => {
+    logEvent('error', { error: audio.error });
+    if (!isPlaying) return;
+    nextTrack();
+  });
+  audio.addEventListener('stalled', () => {
+    logEvent('stalled');
+  });
+  audio.addEventListener('waiting', () => {
+    logEvent('waiting');
+  });
+  audio.addEventListener('suspend', () => {
+    logEvent('suspend');
+  });
+  audio.addEventListener('playing', () => {
+    logEvent('playing');
+  });
+  audio.addEventListener('pause', () => {
+    logEvent('pause');
+  });
+  audio.addEventListener('loadedmetadata', () => {
+    logEvent('loadedmetadata');
   });
   audio.addEventListener('timeupdate', () => {
     updateProgress();
