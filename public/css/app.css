@@ -610,16 +610,39 @@ body.tb-body {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  margin-left: auto;
 }
 
 .tb-track-links a {
   color: var(--tb-muted);
-  font-size: 1rem;
+  font-size: 1.25rem;
   transition: color 0.2s ease;
 }
 
 .tb-track-links a:hover {
   color: #f97316;
+}
+
+.tb-track-actions {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.tb-track-comment-trigger {
+  border: none;
+  background: transparent;
+  color: var(--tb-muted);
+  font-size: 1.05rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 999px;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.tb-track-comment-trigger:hover {
+  color: var(--tb-text);
+  background: rgba(148, 163, 184, 0.15);
 }
 
 .tb-track-player {
@@ -1424,6 +1447,19 @@ body.tb-body {
 }
 
 .tb-video-comment-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.tb-song-comment-modal .tb-song-comment-content {
+  max-width: 520px;
+  width: 90%;
+  padding: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.tb-song-comment-header h3 {
   margin: 0;
   font-size: 1.1rem;
 }
