@@ -341,6 +341,11 @@ const createTrackPlayerInstance = (player) => {
     advanceToNextTrack();
   });
 
+  audio.addEventListener("error", () => {
+    if (!isPlaying) return;
+    advanceToNextTrack();
+  });
+
   audio.addEventListener("loadedmetadata", () => {
     if (pendingSeekTime !== null) {
       audio.currentTime = pendingSeekTime;
