@@ -63,6 +63,25 @@ const createTrackPlayerInstance = (player) => {
   let pendingSeekTime = null;
   let lastSavedTime = 0;
   let hasRestored = false;
+  const logEvent = (event, extra = {}) => {
+    const activeList = getActiveList();
+    const track =
+      activeList && activeIndex !== null
+        ? activeList.tracks[activeIndex]
+        : null;
+    console.debug("[track-player]", event, {
+      listId: activeList?.id || null,
+      index: activeIndex,
+      title: track?.title,
+      src: currentSource,
+      time: audio.currentTime,
+      duration: audio.duration,
+      readyState: audio.readyState,
+      networkState: audio.networkState,
+      paused: audio.paused,
+      ...extra,
+    });
+  };
 
   const getPlayableSource = (track) => {
     if (!track) return "";
@@ -338,15 +357,38 @@ const createTrackPlayerInstance = (player) => {
   if (prevBtn) prevBtn.addEventListener("click", prevTrack);
 
   audio.addEventListener("ended", () => {
+    logEvent("ended");
     advanceToNextTrack();
   });
 
   audio.addEventListener("error", () => {
+    logEvent("error", { error: audio.error });
     if (!isPlaying) return;
     advanceToNextTrack();
   });
 
+  audio.addEventListener("stalled", () => {
+    logEvent("stalled");
+  });
+
+  audio.addEventListener("waiting", () => {
+    logEvent("waiting");
+  });
+
+  audio.addEventListener("suspend", () => {
+    logEvent("suspend");
+  });
+
+  audio.addEventListener("playing", () => {
+    logEvent("playing");
+  });
+
+  audio.addEventListener("pause", () => {
+    logEvent("pause");
+  });
+
   audio.addEventListener("loadedmetadata", () => {
+    logEvent("loadedmetadata");
     if (pendingSeekTime !== null) {
       audio.currentTime = pendingSeekTime;
       pendingSeekTime = null;
