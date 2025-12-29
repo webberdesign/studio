@@ -30,11 +30,62 @@ function tb_order_timestamp(array $order) {
     return $timestamp !== false ? $timestamp : null;
 }
 
+function tb_normalize_url_path($path) {
+    $segments = [];
+    foreach (explode('/', $path) as $segment) {
+        if ($segment === '' || $segment === '.') {
+            continue;
+        }
+        if ($segment === '..') {
+            array_pop($segments);
+            continue;
+        }
+        $segments[] = $segment;
+    }
+
+    return '/' . implode('/', $segments);
+}
+
+function tb_decode_wc_response($response) {
+    $trimmed = trim($response);
+    if ($trimmed === '') {
+        return null;
+    }
+
+    $decoded = json_decode($trimmed, true);
+    if (is_array($decoded)) {
+        return $decoded;
+    }
+
+    $firstBrace = strcspn($trimmed, '[{');
+    if ($firstBrace < strlen($trimmed)) {
+        $decoded = json_decode(substr($trimmed, $firstBrace), true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+    }
+
+    return null;
+}
+
 function tb_fetch_wc_orders() {
     $host = $_SERVER['HTTP_HOST'] ?? '';
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $endpointPath = '/wc-orders.php';
-    $endpoint = $host ? $scheme . '://' . $host . $endpointPath : $endpointPath;
+    $baseUrl = $host ? $scheme . '://' . $host : '';
+    $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+    $scriptDir = rtrim(dirname($scriptName), '/');
+
+    $candidateUrls = [];
+    if ($baseUrl !== '') {
+        $candidateUrls[] = $baseUrl . $endpointPath;
+        if ($scriptDir !== '' && $scriptDir !== '.') {
+            $candidateUrls[] = $baseUrl . tb_normalize_url_path($scriptDir . '/../../wc-orders.php');
+        }
+    } else {
+        $candidateUrls[] = $endpointPath;
+        $candidateUrls[] = '../../wc-orders.php';
+    }
 
     $context = stream_context_create([
         'http' => [
@@ -42,9 +93,12 @@ function tb_fetch_wc_orders() {
         ],
     ]);
 
-    $response = @file_get_contents($endpoint, false, $context);
-    if ($response === false && $endpoint !== $endpointPath) {
-        $response = @file_get_contents($endpointPath, false, $context);
+    $response = false;
+    foreach ($candidateUrls as $candidateUrl) {
+        $response = @file_get_contents($candidateUrl, false, $context);
+        if ($response !== false) {
+            break;
+        }
     }
     if ($response === false) {
         return [
@@ -53,7 +107,7 @@ function tb_fetch_wc_orders() {
         ];
     }
 
-    $decoded = json_decode($response, true);
+    $decoded = tb_decode_wc_response($response);
     if (!is_array($decoded)) {
         return [
             'orders' => [],
@@ -140,6 +194,10 @@ foreach ($rawOrders as $order) {
         'customer' => $customerName,
         'items' => $itemCount,
     ];
+}
+
+if (!empty($orders) && !empty($orders[0]['currency'])) {
+    $defaultCurrency = $orders[0]['currency'];
 }
 
 usort($orders, function ($a, $b) {
