@@ -611,11 +611,12 @@ body.tb-body {
   align-items: center;
   gap: 0.5rem;
   margin-left: auto;
+  justify-content: flex-end;
 }
 
 .tb-track-links a {
   color: var(--tb-muted);
-  font-size: 1.25rem;
+  font-size: 1.4rem;
   transition: color 0.2s ease;
 }
 
@@ -627,13 +628,14 @@ body.tb-body {
   display: inline-flex;
   align-items: center;
   margin-left: auto;
+  justify-content: flex-end;
 }
 
 .tb-track-comment-trigger {
   border: none;
   background: transparent;
   color: var(--tb-muted);
-  font-size: 1.05rem;
+  font-size: 1.2rem;
   cursor: pointer;
   padding: 0.25rem;
   border-radius: 999px;
@@ -1285,6 +1287,10 @@ body.tb-body {
 .tb-video-card .tb-card-body {
   position: relative;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .tb-video-card .tb-card-thumb {
@@ -1422,9 +1428,9 @@ body.tb-body {
   border: none;
   background: transparent;
   color: var(--tb-text);
-  font-size: 1rem;
+  font-size: 1.15rem;
   cursor: pointer;
-  margin-top: 0.5rem;
+  margin-left: auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
