@@ -1848,6 +1848,11 @@ body.tb-body {
   font-size: 1.35rem;
   font-weight: 600;
 }
+.tb-stat-meta {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--tb-muted);
+}
 .tb-stat-card.tb-stat-card--highlight .tb-stat-value {
   font-size: 1.6rem;
   font-weight: 700;
@@ -1866,6 +1871,53 @@ body.tb-body {
 .tb-coming-soon {
   margin-top: 0.75rem;
   font-size: 0.85rem;
+  color: var(--tb-muted);
+}
+
+.tb-shop-summary {
+  margin-top: 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.tb-order-section {
+  margin-top: 1.5rem;
+}
+.tb-order-list {
+  margin-top: 0.75rem;
+  background: var(--tb-card);
+  border: 1px solid var(--tb-border);
+  border-radius: var(--tb-radius-lg);
+  overflow: hidden;
+}
+.tb-order-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--tb-border);
+}
+.tb-order-row:last-child {
+  border-bottom: none;
+}
+.tb-order-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.tb-order-sub {
+  font-size: 0.8rem;
+  color: var(--tb-muted);
+}
+.tb-order-meta {
+  text-align: right;
+}
+.tb-order-amount {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.tb-order-date {
+  font-size: 0.75rem;
   color: var(--tb-muted);
 }
 

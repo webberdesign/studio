@@ -20,6 +20,7 @@ $validPages = [
     'analytics-yt',
     'analytics-web',
     'analytics-app',
+    'analytics-shop',
     'analytics-sp',
     'analytics-ig',
     'analytics-fb',
@@ -38,6 +39,7 @@ $pageTitles = [
     'analytics-yt' => 'Titty Bingo Studio · YouTube Analytics',
     'analytics-web' => 'Titty Bingo Studio · Website Analytics',
     'analytics-app' => 'Titty Bingo Studio · App Analytics',
+    'analytics-shop' => 'Titty Bingo Studio · Shop Analytics',
     'analytics-sp' => 'Titty Bingo Studio · Spotify Analytics',
     'analytics-ig' => 'Titty Bingo Studio · Instagram Analytics',
     'analytics-fb' => 'Titty Bingo Studio · Facebook Analytics',
@@ -45,7 +47,7 @@ $pageTitles = [
     'collection' => 'Titty Bingo Studio · Collection',
 ];
 $pageTitle = $pageTitles[$page] ?? 'Titty Bingo Studio';
-$pageKey = in_array($page, ['analytics-yt', 'analytics-web', 'analytics-app', 'analytics-sp', 'analytics-ig', 'analytics-fb'], true)
+$pageKey = in_array($page, ['analytics-yt', 'analytics-web', 'analytics-app', 'analytics-shop', 'analytics-sp', 'analytics-ig', 'analytics-fb'], true)
     ? 'analytics'
     : $page;
 
@@ -67,6 +69,9 @@ if ($isAjax) {
             break;
         case 'analytics-app':
             include __DIR__ . '/pages/analytics_app.php';
+            break;
+        case 'analytics-shop':
+            include __DIR__ . '/pages/analytics_shop.php';
             break;
         case 'analytics-sp':
             include __DIR__ . '/pages/analytics_spotify.php';
@@ -203,6 +208,9 @@ if ($isAjax) {
                 break;
             case 'analytics-app':
                 include __DIR__ . '/pages/analytics_app.php';
+                break;
+            case 'analytics-shop':
+                include __DIR__ . '/pages/analytics_shop.php';
                 break;
             case 'analytics-sp':
                 include __DIR__ . '/pages/analytics_spotify.php';
