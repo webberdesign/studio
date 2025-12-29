@@ -254,6 +254,44 @@ const initPageInteractions = (root = document) => {
     });
   }
 
+  const songCommentModal = scope.querySelector('#songCommentModal');
+  const songCommentTitle = scope.querySelector('#songCommentTitle');
+  if (songCommentModal && songCommentTitle) {
+    const commentForm = songCommentModal.querySelector('.tb-feed-comment-form');
+    const commentSongId = commentForm ? commentForm.querySelector('input[name="song_id"]') : null;
+    const commentThreads = songCommentModal.querySelectorAll('.tb-song-comment-thread');
+
+    scope.querySelectorAll('.tb-track-comment-trigger').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const title = btn.dataset.songTitle || '';
+        const dbId = btn.dataset.songDbId || '';
+        songCommentTitle.textContent = title ? `${title} Comments` : 'Comments';
+        if (commentSongId) {
+          commentSongId.value = dbId || '';
+        }
+        if (commentThreads.length) {
+          commentThreads.forEach(thread => {
+            thread.hidden = thread.dataset.songId !== dbId;
+          });
+        }
+        songCommentModal.classList.add('active');
+      });
+    });
+
+    const commentClose = songCommentModal.querySelector('.tb-modal-close');
+    if (commentClose) {
+      commentClose.addEventListener('click', () => {
+        songCommentModal.classList.remove('active');
+      });
+    }
+    songCommentModal.addEventListener('click', (e) => {
+      if (e.target === songCommentModal) {
+        songCommentModal.classList.remove('active');
+      }
+    });
+  }
+
   // Song play buttons
   let currentAudio = null;
   let currentPlayBtn = null;
