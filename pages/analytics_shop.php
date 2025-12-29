@@ -103,18 +103,24 @@ fetch(ENDPOINT)
 
         const recent = orders.slice(0, 10);
         const wrap = document.getElementById('recent-orders');
-        wrap.innerHTML = recent.map(order => `
-            <div class="tb-order-row">
-                <div>
-                    <div class="tb-order-title">Order #${order.number}</div>
-                    <div class="tb-order-sub">${order.customer}</div>
+        wrap.innerHTML = recent.map(order => {
+            const itemsText = order.items ? `${order.items} item${order.items === 1 ? '' : 's'}` : 'Items n/a';
+            const location = [order.city, order.state].filter(Boolean).join(', ');
+            const metaLine = location ? `${itemsText} · ${location}` : itemsText;
+            return `
+                <div class="tb-order-row">
+                    <div>
+                        <div class="tb-order-title">Order #${order.number}</div>
+                        <div class="tb-order-sub">${order.customer || 'Guest'}</div>
+                        <div class="tb-order-sub">${metaLine}</div>
+                    </div>
+                    <div class="tb-order-meta">
+                        <div class="tb-order-amount">${money(order.total, order.currency || currency)}</div>
+                        <div class="tb-order-date">${new Date(order.date * 1000).toLocaleDateString()}</div>
+                    </div>
                 </div>
-                <div class="tb-order-meta">
-                    <div class="tb-order-amount">${money(order.total, order.currency || currency)}</div>
-                    <div class="tb-order-date">${new Date(order.date * 1000).toLocaleDateString()}</div>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         loadingEl.style.display = 'none';
         statsEl.style.display = 'grid';
