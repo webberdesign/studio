@@ -261,6 +261,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   audio.addEventListener('ended', () => {
     nextTrack();
   });
+  audio.addEventListener('error', () => {
+    if (!isPlaying) return;
+    nextTrack();
+  });
   audio.addEventListener('timeupdate', () => {
     updateProgress();
   });
