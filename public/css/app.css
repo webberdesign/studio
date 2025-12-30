@@ -2036,3 +2036,77 @@ body.tb-body {
   object-fit: contain;
   padding: 12px;
 }
+
+/*  SECTION: Lock Screen  */
+.tb-body--locked {
+  overflow: hidden;
+}
+
+.tb-lock-screen {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.tb-lock-screen.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.tb-lock-card {
+  width: min(420px, 100%);
+  background: #0b1220;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 18px;
+  padding: 2rem;
+  text-align: center;
+  color: #f8fafc;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.45);
+}
+
+.tb-lock-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.tb-lock-subtitle {
+  color: #cbd5f5;
+  margin-bottom: 1.5rem;
+}
+
+.tb-lock-inputs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tb-lock-input {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 12px;
+  color: #f8fafc;
+  font-size: 1.4rem;
+  text-align: center;
+  padding: 0.65rem 0;
+}
+
+.tb-lock-input:focus {
+  outline: none;
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
+}
+
+.tb-lock-error {
+  color: #fca5a5;
+  min-height: 1.25rem;
+}

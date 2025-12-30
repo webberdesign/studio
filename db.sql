@@ -97,3 +97,11 @@ CREATE TABLE tb_song_comments (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (song_id) REFERENCES tb_songs(id) ON DELETE CASCADE
 );
+
+/*
+ * App open logs.
+ */
+CREATE TABLE tb_app_opens (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  opened_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
