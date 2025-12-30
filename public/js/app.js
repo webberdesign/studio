@@ -80,6 +80,98 @@ const initShellControls = () => {
   }
 };
 
+const initLockScreen = () => {
+  const lockScreen = document.getElementById('tbLockScreen');
+  if (!lockScreen) return;
+  const unlockPin = lockScreen.dataset.unlockPin || '';
+  const inputs = Array.from(lockScreen.querySelectorAll('.tb-lock-input'));
+  const errorText = document.getElementById('tbLockError');
+  const body = document.body;
+
+  const setLockedState = (locked) => {
+    lockScreen.classList.toggle('is-visible', locked);
+    lockScreen.setAttribute('aria-hidden', locked ? 'false' : 'true');
+    if (body) {
+      body.classList.toggle('tb-body--locked', locked);
+    }
+  };
+
+  if (!unlockPin) {
+    setLockedState(false);
+    return;
+  }
+
+  if (localStorage.getItem('tb_device_unlocked') === '1') {
+    setLockedState(false);
+    return;
+  }
+
+  setLockedState(true);
+  if (inputs[0]) {
+    inputs[0].focus();
+  }
+
+  const clearInputs = () => {
+    inputs.forEach((input) => {
+      input.value = '';
+    });
+  };
+
+  const getEnteredPin = () => inputs.map((input) => input.value).join('');
+
+  const checkPin = () => {
+    const entered = getEnteredPin();
+    if (entered.length < inputs.length) return;
+    if (entered === unlockPin) {
+      localStorage.setItem('tb_device_unlocked', '1');
+      setLockedState(false);
+      if (errorText) {
+        errorText.textContent = '';
+      }
+      return;
+    }
+    if (errorText) {
+      errorText.textContent = 'Incorrect PIN. Try again.';
+    }
+    clearInputs();
+    if (inputs[0]) {
+      inputs[0].focus();
+    }
+  };
+
+  inputs.forEach((input, index) => {
+    input.addEventListener('input', (event) => {
+      const value = event.target.value.replace(/\D/g, '');
+      event.target.value = value;
+      if (value && inputs[index + 1]) {
+        inputs[index + 1].focus();
+      }
+      checkPin();
+    });
+
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Backspace' && !event.target.value && inputs[index - 1]) {
+        inputs[index - 1].focus();
+      }
+    });
+
+    input.addEventListener('paste', (event) => {
+      event.preventDefault();
+      const paste = (event.clipboardData || window.clipboardData).getData('text');
+      const digits = paste.replace(/\D/g, '').slice(0, inputs.length).split('');
+      digits.forEach((digit, i) => {
+        if (inputs[i]) {
+          inputs[i].value = digit;
+        }
+      });
+      if (inputs[digits.length]) {
+        inputs[digits.length].focus();
+      }
+      checkPin();
+    });
+  });
+};
+
 const initPageInteractions = (root = document) => {
   const scope = root.querySelector ? root : document;
   // Analytics toggle
@@ -560,6 +652,7 @@ const initAjaxNavigation = () => {
 
 document.addEventListener('DOMContentLoaded', () => {
   initShellControls();
+  initLockScreen();
   initPageInteractions(document);
   initAjaxNavigation();
 });

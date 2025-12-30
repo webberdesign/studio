@@ -7,7 +7,7 @@ require_once __DIR__ . '/feed_helpers.php';
 
 // Determine which tab is selected
 $tab = $_GET['tab'] ?? 'videos';
-$validTabs = ['videos', 'songs', 'collections', 'feed', 'settings'];
+$validTabs = ['videos', 'songs', 'collections', 'feed', 'app', 'settings'];
 if (!in_array($tab, $validTabs, true)) {
     $tab = 'videos';
 }
@@ -17,6 +17,7 @@ $settings = tb_get_settings();
 $currentTheme = $settings['theme'];
 $showSpotify = !empty($settings['show_spotify']);
 $showApple   = !empty($settings['show_apple']);
+$unlockPin   = $settings['unlock_pin'];
 
 // Handle login
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
@@ -247,6 +248,18 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
         $currentTheme = $settings['theme'];
         $showSpotify  = !empty($settings['show_spotify']);
         $showApple    = !empty($settings['show_apple']);
+        $unlockPin    = $settings['unlock_pin'];
+    }
+
+    // Update lock screen pin
+    if (isset($_POST['update_lock_pin'])) {
+        $rawPin = trim($_POST['unlock_pin'] ?? '');
+        $pin = preg_replace('/\D+/', '', $rawPin);
+        if (strlen($pin) === 6) {
+            tb_set_settings(['unlock_pin' => $pin]);
+            $settings  = tb_get_settings();
+            $unlockPin = $settings['unlock_pin'];
+        }
     }
 
     // Redirect back to avoid form resubmission
@@ -301,6 +314,7 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
                 <a href="?tab=songs" class="<?php echo ($tab === 'songs') ? 'active' : ''; ?>">Music</a>
                 <a href="?tab=collections" class="<?php echo ($tab === 'collections') ? 'active' : ''; ?>">Collections</a>
                 <a href="?tab=feed" class="<?php echo ($tab === 'feed') ? 'active' : ''; ?>">Feed</a>
+                <a href="?tab=app" class="<?php echo ($tab === 'app') ? 'active' : ''; ?>">App</a>
                 <a href="?tab=settings" class="<?php echo ($tab === 'settings') ? 'active' : ''; ?>">Settings</a>
             </div>
 
@@ -509,6 +523,43 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
                         </label>
                         <button type="submit" name="update_theme" class="tb-btn-primary">
                             Save Settings
+                        </button>
+                    </form>
+                </section>
+            <?php elseif ($tab === 'app'): ?>
+                <?php
+                $appOpens = $pdo->query("SELECT opened_at FROM tb_app_opens ORDER BY opened_at DESC LIMIT 11")
+                                ->fetchAll(PDO::FETCH_ASSOC);
+                $lastOpened = $appOpens[0]['opened_at'] ?? null;
+                $previousOpens = array_slice($appOpens, 1, 10);
+                ?>
+                <section class="tb-admin-section">
+                    <h2>App Opens</h2>
+                    <?php if ($lastOpened): ?>
+                        <p><strong>Last opened:</strong> <?php echo htmlspecialchars(date('M j, Y g:ia', strtotime($lastOpened))); ?></p>
+                        <?php if (!empty($previousOpens)): ?>
+                            <ul class="tb-admin-list">
+                                <?php foreach ($previousOpens as $open): ?>
+                                    <li><?php echo htmlspecialchars(date('M j, Y g:ia', strtotime($open['opened_at']))); ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php else: ?>
+                            <p class="tb-muted">No previous opens logged yet.</p>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <p class="tb-muted">No opens logged yet.</p>
+                    <?php endif; ?>
+                </section>
+                <section class="tb-admin-section">
+                    <h2>Lock Screen</h2>
+                    <form method="post" class="tb-form-inline">
+                        <input type="hidden" name="tab" value="app">
+                        <label>6-digit PIN
+                            <input type="text" name="unlock_pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Enter 6 digits">
+                        </label>
+                        <p class="tb-muted">Current PIN: •••••• (last two digits <?php echo htmlspecialchars(substr($unlockPin, -2)); ?>)</p>
+                        <button type="submit" name="update_lock_pin" class="tb-btn-primary">
+                            Update PIN
                         </button>
                     </form>
                 </section>

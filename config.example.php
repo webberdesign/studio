@@ -45,12 +45,13 @@ function tb_is_admin() {
  * third‑party service buttons (e.g. Apple Music, Spotify).  Defaults are
  * provided for missing values.  The structure of the settings file is
  * expected to be a simple JSON object, e.g. {"theme":"dark",
- * "show_spotify":true,"show_apple":true}.
+ * "show_spotify":true,"show_apple":true,"unlock_pin":"123456"}.
  *
  * @return array associative array of settings with keys:
  *               - theme: 'light' or 'dark'
  *               - show_spotify: bool
  *               - show_apple: bool
+ *               - unlock_pin: string 6-digit PIN
  */
 function tb_get_settings(): array {
     $settingsFile = __DIR__ . '/settings.json';
@@ -59,6 +60,7 @@ function tb_get_settings(): array {
         'theme'        => 'dark',
         'show_spotify' => true,
         'show_apple'   => true,
+        'unlock_pin'   => '123456',
     ];
     if (file_exists($settingsFile)) {
         $json = @file_get_contents($settingsFile);
@@ -78,6 +80,12 @@ function tb_get_settings(): array {
     $defaults['show_apple']   = !empty($defaults['show_apple']);
     // Normalize theme string
     $defaults['theme'] = ($defaults['theme'] === 'light') ? 'light' : 'dark';
+    // Normalize unlock pin (digits only, 6 length)
+    $pin = preg_replace('/\D+/', '', (string)($defaults['unlock_pin'] ?? ''));
+    if (strlen($pin) !== 6) {
+        $pin = '123456';
+    }
+    $defaults['unlock_pin'] = $pin;
     return $defaults;
 }
 
@@ -96,7 +104,8 @@ function tb_get_theme(): string {
 /**
  * Persist updates to the settings.json file.  Only keys present in the
  * provided $updates array will be changed; all other existing settings
- * are preserved.  Accepts keys 'theme', 'show_spotify' and 'show_apple'.
+ * are preserved.  Accepts keys 'theme', 'show_spotify', 'show_apple',
+ * and 'unlock_pin'.
  *
  * @param array $updates
  * @return void
@@ -111,6 +120,11 @@ function tb_set_settings(array $updates): void {
             $current['show_spotify'] = (bool)$val;
         } elseif ($key === 'show_apple') {
             $current['show_apple'] = (bool)$val;
+        } elseif ($key === 'unlock_pin') {
+            $pin = preg_replace('/\D+/', '', (string)$val);
+            if (strlen($pin) === 6) {
+                $current['unlock_pin'] = $pin;
+            }
         }
     }
     @file_put_contents($settingsFile, json_encode($current));

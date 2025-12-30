@@ -4,8 +4,10 @@
 ------------------------------------------------------------*/
 require_once __DIR__ . '/config.php';
 
-// Determine current theme from settings
-$currentTheme = tb_get_theme();
+// Determine current theme and lock pin from settings
+$settings = tb_get_settings();
+$currentTheme = $settings['theme'];
+$unlockPin = $settings['unlock_pin'];
 
 // Determine which page is being requested
 // Default to the videos page.  Valid pages include our top‑level pages and
@@ -52,6 +54,11 @@ $pageKey = in_array($page, ['analytics-yt', 'analytics-web', 'analytics-app', 'a
     : $page;
 
 $isAjax = isset($_GET['ajax']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
+
+if (!$isAjax) {
+    $stmt = $pdo->prepare("INSERT INTO tb_app_opens (opened_at) VALUES (NOW())");
+    $stmt->execute();
+}
 if ($isAjax) {
     ob_start();
     switch ($page) {
@@ -140,6 +147,25 @@ if ($isAjax) {
     </script>
 </head>
 <body class="tb-body <?php echo ($currentTheme === 'light') ? 'tb-theme-light' : ''; ?>">
+<div class="tb-lock-screen" id="tbLockScreen" data-unlock-pin="<?php echo htmlspecialchars($unlockPin); ?>" aria-hidden="true">
+    <div class="tb-lock-card">
+        <div class="tb-lock-title">Welcome to Titty Bingo Studio</div>
+        <p class="tb-lock-subtitle">Enter the 6-digit PIN to unlock this device.</p>
+        <div class="tb-lock-inputs" role="group" aria-label="6-digit unlock pin">
+            <?php for ($i = 0; $i < 6; $i++): ?>
+                <input
+                    type="text"
+                    inputmode="numeric"
+                    pattern="[0-9]*"
+                    maxlength="1"
+                    class="tb-lock-input"
+                    aria-label="PIN digit <?php echo $i + 1; ?>"
+                >
+            <?php endfor; ?>
+        </div>
+        <p class="tb-lock-error" id="tbLockError" role="alert" aria-live="polite"></p>
+    </div>
+</div>
 
 <!-- SECTION: Side Drawer -->
 <aside id="tbSideNav" class="tb-sidenav">
