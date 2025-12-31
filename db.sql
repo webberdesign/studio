@@ -5,11 +5,28 @@
 CREATE TABLE tb_admin_users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(50) NOT NULL UNIQUE,
-  password_hash VARCHAR(255) NOT NULL
+  password_hash VARCHAR(255) NOT NULL,
+  display_name VARCHAR(100) DEFAULT NULL
 );
 
-INSERT INTO tb_admin_users (username, password_hash)
-VALUES ('tbadmin', SHA2('changeme123', 256));
+INSERT INTO tb_admin_users (username, password_hash, display_name)
+VALUES ('tbadmin', SHA2('changeme123', 256), 'Admin');
+
+CREATE TABLE tb_users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  icon_path VARCHAR(255) DEFAULT NULL,
+  unlock_pin VARCHAR(6) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE tb_user_devices (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  device_token VARCHAR(64) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES tb_users(id) ON DELETE CASCADE
+);
 
 CREATE TABLE tb_videos (
   id INT AUTO_INCREMENT PRIMARY KEY,

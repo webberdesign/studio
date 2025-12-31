@@ -7,9 +7,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_song_comment']) && !empty($_POST['song_id'])) {
         $songId = (int) $_POST['song_id'];
         $comment = trim($_POST['comment_body'] ?? '');
-        if ($comment !== '') {
+        $authorName = tb_get_comment_author($pdo);
+        if ($comment !== '' && $authorName) {
             $stmt = $pdo->prepare("INSERT INTO tb_song_comments (song_id, author_name, body) VALUES (?, ?, ?)");
-            $stmt->execute([$songId, 'Dahr', $comment]);
+            $stmt->execute([$songId, $authorName, $comment]);
         }
     }
 }
@@ -210,7 +211,7 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
                                 <ul>
                                     <?php foreach ($comments as $comment): ?>
                                         <li>
-                                            <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Dahr'); ?>:</strong>
+                                            <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Member'); ?>:</strong>
                                             <?php echo nl2br(htmlspecialchars($comment['body'])); ?>
                                         </li>
                                     <?php endforeach; ?>
