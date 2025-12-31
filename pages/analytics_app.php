@@ -1,12 +1,12 @@
 <?php
 /*  PAGE NAME: pages/analytics_app.php
-    SECTION: TB MusicBox App Analytics
+    SECTION: TB Rock &amp; Roll App Analytics
 ------------------------------------------------------------*/
 require_once __DIR__ . '/../config.php';
 ?>
 <section class="tb-section">
     <a href="index.php?page=analytics" class="tb-btn-secondary tb-back-link" data-loading-message="Loading Latest Analytics"><i class="fas fa-arrow-left"></i> Back to Analytics</a>
-    <h1 class="tb-title">TB MusicBox App</h1>
+    <h1 class="tb-title">TB Rock &amp; Roll App</h1>
     <p class="tb-subtitle">Coming soon &mdash; app engagement and playback analytics.</p>
 
     <div id="app-loading" class="tb-loading">Loading Latest Analytics</div>
