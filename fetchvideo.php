@@ -3,6 +3,7 @@
     SECTION: Detailed YouTube Video Analytics
 ------------------------------------------------------------*/
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/user_helpers.php';
 
 // Pull in the refresh token helper used by other analytics pages
 include __DIR__ . '/analytics/refreshToken.php';

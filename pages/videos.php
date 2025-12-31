@@ -2,6 +2,7 @@
 /*  PAGE NAME: pages/videos.php
     SECTION: Videos Library (Public)
 ------------------------------------------------------------*/
+require_once __DIR__ . '/../user_helpers.php';
 
 /**
  * Converts a YouTube URL into a thumbnail URL (mqdefault).

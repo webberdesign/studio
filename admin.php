@@ -4,6 +4,7 @@
 ------------------------------------------------------------*/
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/feed_helpers.php';
+require_once __DIR__ . '/user_helpers.php';
 
 // Determine which tab is selected
 $tab = $_GET['tab'] ?? 'videos';

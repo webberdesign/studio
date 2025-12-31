@@ -2,6 +2,7 @@
 /*  PAGE NAME: pages/music.php
     SECTION: Music Library (Public)
 ------------------------------------------------------------*/
+require_once __DIR__ . '/../user_helpers.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_song_comment']) && !empty($_POST['song_id'])) {

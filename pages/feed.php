@@ -3,6 +3,7 @@
     SECTION: Social Feed
 ------------------------------------------------------------*/
 require_once __DIR__ . '/../feed_helpers.php';
+require_once __DIR__ . '/../user_helpers.php';
 
 $feedMessage = null;
 

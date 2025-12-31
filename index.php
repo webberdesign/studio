@@ -3,6 +3,7 @@
     SECTION: Bootstrap
 ------------------------------------------------------------*/
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/user_helpers.php';
 
 // Determine current theme from settings
 $settings = tb_get_settings();
