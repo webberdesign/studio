@@ -31,7 +31,7 @@ require_once __DIR__ . '/../config.php';
         </a>
         <a href="?page=analytics-app" class="tb-analytics-link" data-loading-message="Loading Latest Analytics">
             <i class="fas fa-mobile-screen-button"></i>
-            <span>TB MusicBox App</span>
+            <span>TB Rock &amp; Roll App</span>
         </a>
         <a href="?page=analytics-ig" class="tb-analytics-link" data-loading-message="Loading Latest Analytics">
             <i class="fab fa-instagram"></i>
