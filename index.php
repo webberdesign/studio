@@ -6,9 +6,9 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/user_helpers.php';
 
 // Determine current theme from settings
-$settings = tb_get_settings();
-$currentTheme = $settings['theme'];
 $currentUser = tb_get_current_user($pdo);
+$settings = tb_get_effective_settings($pdo, $currentUser);
+$currentTheme = $settings['theme'];
 $adminName = tb_get_admin_display_name($pdo);
 $displayName = $adminName ?: ($currentUser['name'] ?? 'Member');
 $displayIcon = !empty($currentUser['icon_path']) ? $currentUser['icon_path'] : 'assets/icons/icon-152.png';
@@ -60,8 +60,9 @@ $pageKey = in_array($page, ['analytics-yt', 'analytics-web', 'analytics-app', 'a
 $isAjax = isset($_GET['ajax']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
 
 if (!$isAjax) {
-    $stmt = $pdo->prepare("INSERT INTO tb_app_opens (opened_at) VALUES (NOW())");
-    $stmt->execute();
+    $userId = $currentUser['id'] ?? null;
+    $stmt = $pdo->prepare("INSERT INTO tb_app_opens (user_id, opened_at) VALUES (?, NOW())");
+    $stmt->execute([$userId]);
 }
 if ($isAjax) {
     ob_start();

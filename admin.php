@@ -649,24 +649,64 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
                 </section>
             <?php elseif ($tab === 'app'): ?>
                 <?php
-                $appOpens = $pdo->query("SELECT opened_at FROM tb_app_opens ORDER BY opened_at DESC LIMIT 11")
-                                ->fetchAll(PDO::FETCH_ASSOC);
+                $appOpensStmt = $pdo->query(
+                    "SELECT ao.opened_at, u.name AS user_name
+                     FROM tb_app_opens ao
+                     LEFT JOIN tb_users u ON u.id = ao.user_id
+                     ORDER BY ao.opened_at DESC
+                     LIMIT 11"
+                );
+                $appOpens = $appOpensStmt->fetchAll(PDO::FETCH_ASSOC);
                 $lastOpened = $appOpens[0]['opened_at'] ?? null;
+                $lastOpenedName = $appOpens[0]['user_name'] ?? null;
                 $previousOpens = array_slice($appOpens, 1, 10);
+                $userOpenTotals = $pdo->query(
+                    "SELECT u.id, u.name, COUNT(*) AS total_opens
+                     FROM tb_app_opens ao
+                     LEFT JOIN tb_users u ON u.id = ao.user_id
+                     GROUP BY u.id, u.name
+                     ORDER BY total_opens DESC"
+                )->fetchAll(PDO::FETCH_ASSOC);
                 ?>
                 <section class="tb-admin-section">
                     <h2>App Opens</h2>
                     <?php if ($lastOpened): ?>
-                        <p><strong>Last opened:</strong> <?php echo htmlspecialchars(date('M j, Y g:ia', strtotime($lastOpened))); ?></p>
+                        <p><strong>Last opened:</strong> <?php echo htmlspecialchars(date('M j, Y g:ia', strtotime($lastOpened))); ?>
+                            <?php if (!empty($lastOpenedName)): ?>
+                                <span class="tb-muted">· <?php echo htmlspecialchars($lastOpenedName); ?></span>
+                            <?php endif; ?>
+                        </p>
                         <?php if (!empty($previousOpens)): ?>
                             <ul class="tb-admin-list">
                                 <?php foreach ($previousOpens as $open): ?>
-                                    <li><?php echo htmlspecialchars(date('M j, Y g:ia', strtotime($open['opened_at']))); ?></li>
+                                    <li>
+                                        <?php echo htmlspecialchars(date('M j, Y g:ia', strtotime($open['opened_at']))); ?>
+                                        <?php if (!empty($open['user_name'])): ?>
+                                            <span class="tb-muted">· <?php echo htmlspecialchars($open['user_name']); ?></span>
+                                        <?php endif; ?>
+                                    </li>
                                 <?php endforeach; ?>
                             </ul>
                         <?php else: ?>
                             <p class="tb-muted">No previous opens logged yet.</p>
                         <?php endif; ?>
+                    <?php else: ?>
+                        <p class="tb-muted">No opens logged yet.</p>
+                    <?php endif; ?>
+                </section>
+                <section class="tb-admin-section">
+                    <h2>App Opens by User</h2>
+                    <?php if (!empty($userOpenTotals)): ?>
+                        <ul class="tb-admin-list">
+                            <?php foreach ($userOpenTotals as $userOpen): ?>
+                                <li>
+                                    <strong><?php echo htmlspecialchars($userOpen['name'] ?: 'Unknown User'); ?></strong>
+                                    <span class="tb-muted" style="margin-left:0.35rem;">
+                                        Total Opens: <?php echo (int) $userOpen['total_opens']; ?>
+                                    </span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
                     <?php else: ?>
                         <p class="tb-muted">No opens logged yet.</p>
                     <?php endif; ?>

@@ -10,8 +10,9 @@ include __DIR__ . '/analytics/refreshToken.php';
 require_once __DIR__ . '/analytics/cache_helpers.php';
 
 // Determine current theme for styling
-$currentTheme = tb_get_theme();
 $currentUser = tb_get_current_user($pdo);
+$settings = tb_get_effective_settings($pdo, $currentUser);
+$currentTheme = $settings['theme'];
 $adminName = tb_get_admin_display_name($pdo);
 $displayName = $adminName ?: ($currentUser['name'] ?? 'Member');
 $displayIcon = !empty($currentUser['icon_path']) ? $currentUser['icon_path'] : 'assets/icons/icon-152.png';

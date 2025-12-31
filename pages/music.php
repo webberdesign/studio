@@ -43,7 +43,7 @@ if (!empty($unreleased)) {
 // Placeholder cover (app icon) for tracks without artwork
 // Global settings determine whether to show Spotify and Apple buttons.  Retrieve
 // them once for the page to avoid repeated file reads.
-$settings = tb_get_settings();
+$settings = tb_get_effective_settings($pdo);
 $showSpotifyGlobal = !empty($settings['show_spotify']);
 $showAppleGlobal   = !empty($settings['show_apple']);
 
