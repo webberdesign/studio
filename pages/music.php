@@ -203,6 +203,19 @@ if (!empty($collections)) {
 
     <!-- Collections -->
     <div id="tbSongsCollections" class="tb-songs-pane">
+        <?php if ($canCreateCollection): ?>
+            <form method="post" class="tb-form-inline tb-collection-create">
+                <label>
+                    Collection name
+                    <input type="text" name="collection_name" required placeholder="New collection name">
+                </label>
+                <label>
+                    Cover image URL (optional)
+                    <input type="url" name="collection_cover" placeholder="https://...">
+                </label>
+                <button type="submit" name="add_collection_public" class="tb-btn-secondary">Create collection</button>
+            </form>
+        <?php endif; ?>
         <?php if (!empty($collections)): ?>
             <div class="tb-card-grid tb-collection-grid" style="margin-bottom:1rem;">
                 <?php foreach ($collections as $c): ?>
