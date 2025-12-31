@@ -3,12 +3,14 @@
     SECTION: Settings Page
 ------------------------------------------------------------*/
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../user_helpers.php';
 
 // Load settings and handle form submission.  The settings page allows
 // visitors to choose light or dark mode and toggle the visibility of
 // Apple Music and Spotify buttons.  These preferences are stored in
 // settings.json and persist across sessions.
-$settings     = tb_get_settings();
+$currentUser = tb_get_current_user($pdo);
+$settings     = tb_get_effective_settings($pdo, $currentUser);
 $currentTheme = $settings['theme'];
 $showSpotify  = !empty($settings['show_spotify']);
 $showApple    = !empty($settings['show_apple']);
@@ -21,25 +23,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Determine service flags
     $newShowSpotify = isset($_POST['show_spotify']) ? true : false;
     $newShowApple   = isset($_POST['show_apple']) ? true : false;
-    // Persist settings
-    tb_set_settings([
-        'theme'        => $newTheme,
-        'show_spotify' => $newShowSpotify,
-        'show_apple'   => $newShowApple
-    ]);
+    if ($currentUser) {
+        tb_update_user_settings($pdo, (int)$currentUser['id'], [
+            'theme' => $newTheme,
+            'show_spotify' => $newShowSpotify,
+            'show_apple' => $newShowApple,
+        ]);
+    } else {
+        tb_set_settings([
+            'theme'        => $newTheme,
+            'show_spotify' => $newShowSpotify,
+            'show_apple'   => $newShowApple
+        ]);
+    }
     // Update local variables
-    $settings     = tb_get_settings();
+    $settings     = tb_get_effective_settings($pdo, $currentUser);
     $currentTheme = $settings['theme'];
     $showSpotify  = !empty($settings['show_spotify']);
     $showApple    = !empty($settings['show_apple']);
     // Optional: redirect to avoid resubmission
-    header('Location: ?page=settings');
-    exit;
+    if (!headers_sent()) {
+        header('Location: ?page=settings');
+        exit;
+    }
+    $saveMessage = 'Settings saved.';
 }
 ?>
 <section class="tb-section">
     <h1 class="tb-title">Settings</h1>
     <p class="tb-subtitle">Customize your experience</p>
+    <?php if (!empty($saveMessage)): ?>
+        <div class="tb-alert"><?php echo htmlspecialchars($saveMessage); ?></div>
+    <?php endif; ?>
 
     <form method="post" class="tb-settings-form">
         <div class="tb-form-group">

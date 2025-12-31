@@ -83,10 +83,25 @@ const initShellControls = () => {
 const initLockScreen = () => {
   const lockScreen = document.getElementById('tbLockScreen');
   if (!lockScreen) return;
-  const unlockPin = lockScreen.dataset.unlockPin || '';
+  const authEndpoint = lockScreen.dataset.authEndpoint || 'user_session.php';
   const inputs = Array.from(lockScreen.querySelectorAll('.tb-lock-input'));
   const errorText = document.getElementById('tbLockError');
   const body = document.body;
+  const headerName = document.querySelector('.tb-header-name');
+  const headerAvatar = document.querySelector('.tb-header-avatar-img');
+
+  const getDeviceToken = () => {
+    let token = localStorage.getItem('tb_device_token');
+    if (!token) {
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+        token = window.crypto.randomUUID();
+      } else {
+        token = `tb_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+      }
+      localStorage.setItem('tb_device_token', token);
+    }
+    return token;
+  };
 
   const setLockedState = (locked) => {
     lockScreen.classList.toggle('is-visible', locked);
@@ -96,20 +111,59 @@ const initLockScreen = () => {
     }
   };
 
-  if (!unlockPin) {
-    setLockedState(false);
-    return;
-  }
+  const updateHeaderProfile = (user) => {
+    if (!user) return;
+    if (headerName && user.name) {
+      headerName.textContent = user.name;
+    }
+    if (headerAvatar && user.icon_path) {
+      headerAvatar.setAttribute('src', user.icon_path);
+    }
+  };
 
-  if (localStorage.getItem('tb_device_unlocked') === '1') {
-    setLockedState(false);
-    return;
-  }
+  const sendAuthRequest = async (payload) => {
+    const response = await fetch(authEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      credentials: 'same-origin',
+    });
+    if (!response.ok) {
+      throw new Error('Auth request failed');
+    }
+    return response.json();
+  };
 
-  setLockedState(true);
-  if (inputs[0]) {
-    inputs[0].focus();
-  }
+  const validateDevice = async () => {
+    const deviceToken = getDeviceToken();
+    try {
+      const data = await sendAuthRequest({ action: 'validate', device_token: deviceToken });
+      if (data && data.success) {
+        setLockedState(false);
+        updateHeaderProfile(data.user);
+        if (errorText) {
+          errorText.textContent = '';
+        }
+        return true;
+      }
+    } catch (error) {
+      // fail silently and keep locked
+    }
+    return false;
+  };
+
+  const startLockedState = () => {
+    setLockedState(true);
+    if (inputs[0]) {
+      inputs[0].focus();
+    }
+  };
+
+  validateDevice().then((isValid) => {
+    if (!isValid) {
+      startLockedState();
+    }
+  });
 
   const clearInputs = () => {
     inputs.forEach((input) => {
@@ -119,19 +173,31 @@ const initLockScreen = () => {
 
   const getEnteredPin = () => inputs.map((input) => input.value).join('');
 
-  const checkPin = () => {
+  const checkPin = async () => {
     const entered = getEnteredPin();
     if (entered.length < inputs.length) return;
-    if (entered === unlockPin) {
-      localStorage.setItem('tb_device_unlocked', '1');
-      setLockedState(false);
-      if (errorText) {
-        errorText.textContent = '';
+    const deviceToken = getDeviceToken();
+    try {
+      const data = await sendAuthRequest({
+        action: 'unlock',
+        device_token: deviceToken,
+        pin: entered,
+      });
+      if (data && data.success) {
+        setLockedState(false);
+        updateHeaderProfile(data.user);
+        if (errorText) {
+          errorText.textContent = '';
+        }
+        return;
       }
-      return;
-    }
-    if (errorText) {
-      errorText.textContent = 'Incorrect PIN. Try again.';
+      if (errorText) {
+        errorText.textContent = data && data.message ? data.message : 'Unable to unlock this device.';
+      }
+    } catch (error) {
+      if (errorText) {
+        errorText.textContent = 'Unable to unlock this device.';
+      }
     }
     clearInputs();
     if (inputs[0]) {

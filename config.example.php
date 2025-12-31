@@ -45,13 +45,12 @@ function tb_is_admin() {
  * third‑party service buttons (e.g. Apple Music, Spotify).  Defaults are
  * provided for missing values.  The structure of the settings file is
  * expected to be a simple JSON object, e.g. {"theme":"dark",
- * "show_spotify":true,"show_apple":true,"unlock_pin":"123456"}.
+ * "show_spotify":true,"show_apple":true}.
  *
  * @return array associative array of settings with keys:
  *               - theme: 'light' or 'dark'
  *               - show_spotify: bool
  *               - show_apple: bool
- *               - unlock_pin: string 6-digit PIN
  */
 function tb_get_settings(): array {
     $settingsFile = __DIR__ . '/settings.json';
@@ -60,7 +59,6 @@ function tb_get_settings(): array {
         'theme'        => 'dark',
         'show_spotify' => true,
         'show_apple'   => true,
-        'unlock_pin'   => '123456',
     ];
     if (file_exists($settingsFile)) {
         $json = @file_get_contents($settingsFile);
@@ -80,12 +78,6 @@ function tb_get_settings(): array {
     $defaults['show_apple']   = !empty($defaults['show_apple']);
     // Normalize theme string
     $defaults['theme'] = ($defaults['theme'] === 'light') ? 'light' : 'dark';
-    // Normalize unlock pin (digits only, 6 length)
-    $pin = preg_replace('/\D+/', '', (string)($defaults['unlock_pin'] ?? ''));
-    if (strlen($pin) !== 6) {
-        $pin = '123456';
-    }
-    $defaults['unlock_pin'] = $pin;
     return $defaults;
 }
 
@@ -105,7 +97,7 @@ function tb_get_theme(): string {
  * Persist updates to the settings.json file.  Only keys present in the
  * provided $updates array will be changed; all other existing settings
  * are preserved.  Accepts keys 'theme', 'show_spotify', 'show_apple',
- * and 'unlock_pin'.
+ * and 'show_apple'.
  *
  * @param array $updates
  * @return void
@@ -120,11 +112,6 @@ function tb_set_settings(array $updates): void {
             $current['show_spotify'] = (bool)$val;
         } elseif ($key === 'show_apple') {
             $current['show_apple'] = (bool)$val;
-        } elseif ($key === 'unlock_pin') {
-            $pin = preg_replace('/\D+/', '', (string)$val);
-            if (strlen($pin) === 6) {
-                $current['unlock_pin'] = $pin;
-            }
         }
     }
     @file_put_contents($settingsFile, json_encode($current));
@@ -145,6 +132,58 @@ function tb_require_admin() {
     if (!tb_is_admin()) {
         header('Location: admin.php');
         exit;
+    }
+}
+
+if (!function_exists('tb_get_admin_display_name')) {
+    function tb_get_admin_display_name(PDO $pdo): ?string {
+        if (!tb_is_admin()) {
+            return null;
+        }
+        $username = $_SESSION['tb_admin'] ?? '';
+        if ($username === '') {
+            return null;
+        }
+        $stmt = $pdo->prepare("SELECT display_name, username FROM tb_admin_users WHERE username = ? LIMIT 1");
+        $stmt->execute([$username]);
+        $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$admin) {
+            return null;
+        }
+        return $admin['display_name'] ?: $admin['username'];
+    }
+}
+
+if (!function_exists('tb_get_current_user')) {
+    function tb_get_current_user(PDO $pdo): ?array {
+        $token = $_COOKIE['tb_device_token'] ?? '';
+        if ($token === '') {
+            return null;
+        }
+        $stmt = $pdo->prepare(
+            "SELECT u.id, u.name, u.icon_path
+             FROM tb_user_devices d
+             JOIN tb_users u ON u.id = d.user_id
+             WHERE d.device_token = ?
+             LIMIT 1"
+        );
+        $stmt->execute([$token]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $user ?: null;
+    }
+}
+
+if (!function_exists('tb_get_comment_author')) {
+    function tb_get_comment_author(PDO $pdo): ?string {
+        $adminName = tb_get_admin_display_name($pdo);
+        if ($adminName) {
+            return $adminName;
+        }
+        $user = tb_get_current_user($pdo);
+        if ($user && !empty($user['name'])) {
+            return $user['name'];
+        }
+        return null;
     }
 }
 

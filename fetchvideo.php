@@ -3,13 +3,19 @@
     SECTION: Detailed YouTube Video Analytics
 ------------------------------------------------------------*/
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/user_helpers.php';
 
 // Pull in the refresh token helper used by other analytics pages
 include __DIR__ . '/analytics/refreshToken.php';
 require_once __DIR__ . '/analytics/cache_helpers.php';
 
 // Determine current theme for styling
-$currentTheme = tb_get_theme();
+$currentUser = tb_get_current_user($pdo);
+$settings = tb_get_effective_settings($pdo, $currentUser);
+$currentTheme = $settings['theme'];
+$adminName = tb_get_admin_display_name($pdo);
+$displayName = $adminName ?: ($currentUser['name'] ?? 'Member');
+$displayIcon = !empty($currentUser['icon_path']) ? $currentUser['icon_path'] : 'assets/icons/icon-152.png';
 
 $isAjax = isset($_GET['ajax']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
 
@@ -305,9 +311,9 @@ if ($isAjax) {
         <div class="tb-header-spacer"></div>
         <div class="tb-header-profile">
             <span class="tb-header-avatar">
-                <img src="assets/icons/icon-152.png" alt="Profile" class="tb-header-avatar-img">
+                <img src="<?php echo htmlspecialchars($displayIcon); ?>" alt="Profile" class="tb-header-avatar-img">
             </span>
-            <span class="tb-header-name">Dahr J.</span>
+            <span class="tb-header-name"><?php echo htmlspecialchars($displayName); ?></span>
         </div>
     </header>
 
