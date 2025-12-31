@@ -3,11 +3,15 @@
     SECTION: Bootstrap
 ------------------------------------------------------------*/
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/user_helpers.php';
 
-// Determine current theme and lock pin from settings
-$settings = tb_get_settings();
+// Determine current theme from settings
+$currentUser = tb_get_current_user($pdo);
+$settings = tb_get_effective_settings($pdo, $currentUser);
 $currentTheme = $settings['theme'];
-$unlockPin = $settings['unlock_pin'];
+$adminName = tb_get_admin_display_name($pdo);
+$displayName = $adminName ?: ($currentUser['name'] ?? 'Member');
+$displayIcon = !empty($currentUser['icon_path']) ? $currentUser['icon_path'] : 'assets/icons/icon-152.png';
 
 // Determine which page is being requested
 // Default to the videos page.  Valid pages include our top‑level pages and
@@ -56,8 +60,9 @@ $pageKey = in_array($page, ['analytics-yt', 'analytics-web', 'analytics-app', 'a
 $isAjax = isset($_GET['ajax']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
 
 if (!$isAjax) {
-    $stmt = $pdo->prepare("INSERT INTO tb_app_opens (opened_at) VALUES (NOW())");
-    $stmt->execute();
+    $userId = $currentUser['id'] ?? null;
+    $stmt = $pdo->prepare("INSERT INTO tb_app_opens (user_id, opened_at) VALUES (?, NOW())");
+    $stmt->execute([$userId]);
 }
 if ($isAjax) {
     ob_start();
@@ -147,11 +152,11 @@ if ($isAjax) {
     </script>
 </head>
 <body class="tb-body <?php echo ($currentTheme === 'light') ? 'tb-theme-light' : ''; ?>">
-<div class="tb-lock-screen" id="tbLockScreen" data-unlock-pin="<?php echo htmlspecialchars($unlockPin); ?>" aria-hidden="true">
+<div class="tb-lock-screen" id="tbLockScreen" data-auth-endpoint="user_session.php" aria-hidden="true">
     <div class="tb-lock-card">
         <div class="tb-lock-title">Welcome to Titty Bingo Studio</div>
-        <p class="tb-lock-subtitle">Enter the 6-digit PIN to unlock this device.</p>
-        <div class="tb-lock-inputs" role="group" aria-label="6-digit unlock pin">
+        <p class="tb-lock-subtitle">Enter your 6-digit invite code to unlock this device.</p>
+        <div class="tb-lock-inputs" role="group" aria-label="6-digit invite code">
             <?php for ($i = 0; $i < 6; $i++): ?>
                 <input
                     type="text"
@@ -209,9 +214,9 @@ if ($isAjax) {
         <div class="tb-header-spacer"></div>
         <div class="tb-header-profile">
             <span class="tb-header-avatar">
-                <img src="assets/icons/icon-152.png" alt="Profile" class="tb-header-avatar-img">
+                <img src="<?php echo htmlspecialchars($displayIcon); ?>" alt="Profile" class="tb-header-avatar-img">
             </span>
-            <span class="tb-header-name">Dahr J.</span>
+            <span class="tb-header-name"><?php echo htmlspecialchars($displayName); ?></span>
         </div>
     </header>
 

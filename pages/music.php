@@ -2,14 +2,16 @@
 /*  PAGE NAME: pages/music.php
     SECTION: Music Library (Public)
 ------------------------------------------------------------*/
+require_once __DIR__ . '/../user_helpers.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_song_comment']) && !empty($_POST['song_id'])) {
         $songId = (int) $_POST['song_id'];
         $comment = trim($_POST['comment_body'] ?? '');
-        if ($comment !== '') {
+        $authorName = tb_get_comment_author($pdo);
+        if ($comment !== '' && $authorName) {
             $stmt = $pdo->prepare("INSERT INTO tb_song_comments (song_id, author_name, body) VALUES (?, ?, ?)");
-            $stmt->execute([$songId, 'Dahr', $comment]);
+            $stmt->execute([$songId, $authorName, $comment]);
         }
     }
 }
@@ -41,7 +43,7 @@ if (!empty($unreleased)) {
 // Placeholder cover (app icon) for tracks without artwork
 // Global settings determine whether to show Spotify and Apple buttons.  Retrieve
 // them once for the page to avoid repeated file reads.
-$settings = tb_get_settings();
+$settings = tb_get_effective_settings($pdo);
 $showSpotifyGlobal = !empty($settings['show_spotify']);
 $showAppleGlobal   = !empty($settings['show_apple']);
 
@@ -210,7 +212,7 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
                                 <ul>
                                     <?php foreach ($comments as $comment): ?>
                                         <li>
-                                            <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Dahr'); ?>:</strong>
+                                            <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Member'); ?>:</strong>
                                             <?php echo nl2br(htmlspecialchars($comment['body'])); ?>
                                         </li>
                                     <?php endforeach; ?>

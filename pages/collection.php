@@ -4,6 +4,7 @@
 ------------------------------------------------------------*/
 
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../user_helpers.php';
 
 // Get collection ID from query string
 $collectionId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -20,7 +21,9 @@ if (!$collection) {
     return;
 }
 // Determine theme for body class
-$currentTheme = tb_get_theme();
+$currentUser = tb_get_current_user($pdo);
+$settings = tb_get_effective_settings($pdo, $currentUser);
+$currentTheme = $settings['theme'];
 
 // Fetch tracks for this collection
 $stmt = $pdo->prepare("SELECT * FROM tb_songs WHERE collection_id = ? ORDER BY position ASC, created_at DESC");
