@@ -2,6 +2,7 @@
 /*  PAGE NAME: pages/videos.php
     SECTION: Videos Library (Public)
 ------------------------------------------------------------*/
+require_once __DIR__ . '/../user_helpers.php';
 
 /**
  * Converts a YouTube URL into a thumbnail URL (mqdefault).
@@ -18,9 +19,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_video_comment']) && !empty($_POST['video_id'])) {
         $videoId = (int) $_POST['video_id'];
         $comment = trim($_POST['comment_body'] ?? '');
-        if ($comment !== '') {
+        $authorName = tb_get_comment_author($pdo);
+        if ($comment !== '' && $authorName) {
             $stmt = $pdo->prepare("INSERT INTO tb_video_comments (video_id, author_name, body) VALUES (?, ?, ?)");
-            $stmt->execute([$videoId, 'Dahr', $comment]);
+            $stmt->execute([$videoId, $authorName, $comment]);
         }
     }
 }
@@ -162,7 +164,7 @@ $isAdmin = tb_is_admin();
                                 <ul>
                                     <?php foreach ($comments as $comment): ?>
                                         <li>
-                                            <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Dahr'); ?>:</strong>
+                                            <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Member'); ?>:</strong>
                                             <?php echo nl2br(htmlspecialchars($comment['body'])); ?>
                                         </li>
                                     <?php endforeach; ?>

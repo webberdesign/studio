@@ -4,10 +4,11 @@
 ------------------------------------------------------------*/
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/feed_helpers.php';
+require_once __DIR__ . '/user_helpers.php';
 
 // Determine which tab is selected
 $tab = $_GET['tab'] ?? 'videos';
-$validTabs = ['videos', 'songs', 'collections', 'feed', 'app', 'settings'];
+$validTabs = ['videos', 'songs', 'collections', 'feed', 'users', 'app', 'settings'];
 if (!in_array($tab, $validTabs, true)) {
     $tab = 'videos';
 }
@@ -17,7 +18,7 @@ $settings = tb_get_settings();
 $currentTheme = $settings['theme'];
 $showSpotify = !empty($settings['show_spotify']);
 $showApple   = !empty($settings['show_apple']);
-$unlockPin   = $settings['unlock_pin'];
+$adminDisplayName = tb_get_admin_display_name($pdo);
 
 // Handle login
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
@@ -48,6 +49,26 @@ function tb_next_position(PDO $pdo, string $table): int {
     $stmt = $pdo->query("SELECT MAX(position) AS max_pos FROM {$table}");
     $maxPos = $stmt->fetch(PDO::FETCH_ASSOC)['max_pos'];
     return ($maxPos !== null) ? ((int)$maxPos + 1) : 0;
+}
+
+function tb_generate_invite_pin(): string {
+    return str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+}
+
+function tb_handle_user_icon_upload(array $file): ?string {
+    if (empty($file['tmp_name'])) {
+        return null;
+    }
+    $uploadDir = 'uploads/user_icons/';
+    if (!is_dir($uploadDir)) {
+        @mkdir($uploadDir, 0755, true);
+    }
+    $filename = time() . '_' . basename($file['name']);
+    $uploadPath = $uploadDir . $filename;
+    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+        return $uploadPath;
+    }
+    return null;
 }
 
 // Handle CRUD if logged in and not login form
@@ -204,7 +225,7 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
 
             $stmt = $pdo->prepare("INSERT INTO tb_feed_posts (author_name, body, youtube_url, video_path) VALUES (?, ?, ?, ?)");
             $stmt->execute([
-                'Dahr',
+                $adminDisplayName ?: 'Admin',
                 $body,
                 $youtubeUrl !== '' ? $youtubeUrl : null,
                 $videoPath,
@@ -248,18 +269,50 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
         $currentTheme = $settings['theme'];
         $showSpotify  = !empty($settings['show_spotify']);
         $showApple    = !empty($settings['show_apple']);
-        $unlockPin    = $settings['unlock_pin'];
     }
 
-    // Update lock screen pin
-    if (isset($_POST['update_lock_pin'])) {
-        $rawPin = trim($_POST['unlock_pin'] ?? '');
-        $pin = preg_replace('/\D+/', '', $rawPin);
-        if (strlen($pin) === 6) {
-            tb_set_settings(['unlock_pin' => $pin]);
-            $settings  = tb_get_settings();
-            $unlockPin = $settings['unlock_pin'];
+    if (isset($_POST['update_admin_profile']) && tb_is_admin()) {
+        $displayName = trim($_POST['display_name'] ?? '');
+        $stmt = $pdo->prepare("UPDATE tb_admin_users SET display_name = ? WHERE username = ?");
+        $stmt->execute([$displayName !== '' ? $displayName : null, $_SESSION['tb_admin']]);
+        $adminDisplayName = tb_get_admin_display_name($pdo);
+    }
+
+    if (isset($_POST['add_user'])) {
+        $name = trim($_POST['name'] ?? '');
+        $pinInput = preg_replace('/\D+/', '', (string)($_POST['unlock_pin'] ?? ''));
+        $pin = strlen($pinInput) === 6 ? $pinInput : '';
+        if ($name !== '') {
+            if ($pin === '') {
+                $pin = tb_generate_invite_pin();
+            }
+            $attempts = 0;
+            while ($attempts < 5) {
+                $pinCheck = $pdo->prepare("SELECT id FROM tb_users WHERE unlock_pin = ? LIMIT 1");
+                $pinCheck->execute([$pin]);
+                if (!$pinCheck->fetch(PDO::FETCH_ASSOC)) {
+                    break;
+                }
+                $pin = tb_generate_invite_pin();
+                $attempts++;
+            }
+            $pinCheck = $pdo->prepare("SELECT id FROM tb_users WHERE unlock_pin = ? LIMIT 1");
+            $pinCheck->execute([$pin]);
+            if ($pinCheck->fetch(PDO::FETCH_ASSOC)) {
+                $pin = '';
+            }
+            $iconPath = tb_handle_user_icon_upload($_FILES['icon_upload'] ?? []);
+            if ($pin !== '') {
+                $stmt = $pdo->prepare("INSERT INTO tb_users (name, icon_path, unlock_pin) VALUES (?, ?, ?)");
+                $stmt->execute([$name, $iconPath, $pin]);
+            }
         }
+    }
+
+    if (isset($_POST['delete_user']) && !empty($_POST['delete_user'])) {
+        $userId = (int) $_POST['delete_user'];
+        $stmt = $pdo->prepare("DELETE FROM tb_users WHERE id = ?");
+        $stmt->execute([$userId]);
     }
 
     // Redirect back to avoid form resubmission
@@ -314,6 +367,7 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
                 <a href="?tab=songs" class="<?php echo ($tab === 'songs') ? 'active' : ''; ?>">Music</a>
                 <a href="?tab=collections" class="<?php echo ($tab === 'collections') ? 'active' : ''; ?>">Collections</a>
                 <a href="?tab=feed" class="<?php echo ($tab === 'feed') ? 'active' : ''; ?>">Feed</a>
+                <a href="?tab=users" class="<?php echo ($tab === 'users') ? 'active' : ''; ?>">Users</a>
                 <a href="?tab=app" class="<?php echo ($tab === 'app') ? 'active' : ''; ?>">App</a>
                 <a href="?tab=settings" class="<?php echo ($tab === 'settings') ? 'active' : ''; ?>">Settings</a>
             </div>
@@ -526,6 +580,73 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
                         </button>
                     </form>
                 </section>
+                <section class="tb-admin-section">
+                    <h2>Admin Profile</h2>
+                    <form method="post" class="tb-form-inline">
+                        <input type="hidden" name="tab" value="settings">
+                        <label>Display Name
+                            <input type="text" name="display_name" value="<?php echo htmlspecialchars($adminDisplayName ?? ''); ?>" placeholder="Admin name">
+                        </label>
+                        <button type="submit" name="update_admin_profile" class="tb-btn-primary">
+                            Update Name
+                        </button>
+                    </form>
+                </section>
+            <?php elseif ($tab === 'users'): ?>
+                <?php
+                $users = $pdo->query("SELECT * FROM tb_users ORDER BY created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
+                $deviceCountsStmt = $pdo->prepare("SELECT COUNT(*) FROM tb_user_devices WHERE user_id = ?");
+                ?>
+                <section class="tb-admin-section">
+                    <h2>Users</h2>
+                    <form method="post" enctype="multipart/form-data" class="tb-form-inline">
+                        <input type="hidden" name="tab" value="users">
+                        <label>Name
+                            <input type="text" name="name" required>
+                        </label>
+                        <label>Invite Code (optional)
+                            <input type="text" name="unlock_pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Auto-generate if empty">
+                        </label>
+                        <label>Icon Image (optional)
+                            <input type="file" name="icon_upload" accept="image/*">
+                        </label>
+                        <button type="submit" name="add_user" class="tb-btn-primary">
+                            <i class="fas fa-user-plus"></i> Add User
+                        </button>
+                    </form>
+
+                    <ul class="tb-admin-list">
+                        <?php foreach ($users as $user): ?>
+                            <?php
+                            $deviceCountsStmt->execute([$user['id']]);
+                            $deviceCount = (int) $deviceCountsStmt->fetchColumn();
+                            ?>
+                            <li>
+                                <div style="display:flex; align-items:center; gap:0.75rem;">
+                                    <?php if (!empty($user['icon_path'])): ?>
+                                        <img src="<?php echo htmlspecialchars($user['icon_path']); ?>" alt="" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                                    <?php else: ?>
+                                        <span class="tb-muted"><i class="fas fa-user"></i></span>
+                                    <?php endif; ?>
+                                    <div>
+                                        <strong><?php echo htmlspecialchars($user['name']); ?></strong>
+                                        <div class="tb-muted" style="font-size:0.85rem;">
+                                            Invite Code: <?php echo htmlspecialchars($user['unlock_pin']); ?>
+                                            • Devices: <?php echo $deviceCount; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                                <form method="post" class="tb-inline-delete">
+                                    <input type="hidden" name="tab" value="users">
+                                    <button type="submit" name="delete_user" value="<?php echo (int) $user['id']; ?>" class="tb-inline-delete-btn"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </li>
+                        <?php endforeach; ?>
+                        <?php if (empty($users)): ?>
+                            <li class="tb-empty">No users yet.</li>
+                        <?php endif; ?>
+                    </ul>
+                </section>
             <?php elseif ($tab === 'app'): ?>
                 <?php
                 $appOpens = $pdo->query("SELECT opened_at FROM tb_app_opens ORDER BY opened_at DESC LIMIT 11")
@@ -549,19 +670,6 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
                     <?php else: ?>
                         <p class="tb-muted">No opens logged yet.</p>
                     <?php endif; ?>
-                </section>
-                <section class="tb-admin-section">
-                    <h2>Lock Screen</h2>
-                    <form method="post" class="tb-form-inline">
-                        <input type="hidden" name="tab" value="app">
-                        <label>6-digit PIN
-                            <input type="text" name="unlock_pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Enter 6 digits">
-                        </label>
-                        <p class="tb-muted">Current PIN: •••••• (last two digits <?php echo htmlspecialchars(substr($unlockPin, -2)); ?>)</p>
-                        <button type="submit" name="update_lock_pin" class="tb-btn-primary">
-                            Update PIN
-                        </button>
-                    </form>
                 </section>
             <?php elseif ($tab === 'feed'): ?>
                 <?php
@@ -608,7 +716,7 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
                             <article class="tb-feed-card">
                                 <header>
                                     <div>
-                                        <h3><?php echo htmlspecialchars($post['author_name'] ?: 'Dahr'); ?></h3>
+                                        <h3><?php echo htmlspecialchars($post['author_name'] ?: 'Member'); ?></h3>
                                         <time><?php echo htmlspecialchars(date('M j, Y g:ia', strtotime($post['created_at']))); ?></time>
                                     </div>
                                     <form method="post" class="tb-inline-delete">
@@ -648,7 +756,7 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
                                         <ul>
                                             <?php foreach ($comments as $comment): ?>
                                                 <li>
-                                                    <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Dahr'); ?>:</strong>
+                                                    <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Member'); ?>:</strong>
                                                     <?php echo nl2br(htmlspecialchars($comment['body'])); ?>
                                                     <form method="post" class="tb-inline-delete">
                                                         <input type="hidden" name="tab" value="feed">
