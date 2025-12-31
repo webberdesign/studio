@@ -6,6 +6,18 @@
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../user_helpers.php';
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['add_collection_comment']) && !empty($_POST['collection_id'])) {
+        $collectionIdPost = (int) $_POST['collection_id'];
+        $comment = trim($_POST['comment_body'] ?? '');
+        $authorName = tb_get_comment_author($pdo);
+        if ($comment !== '' && $authorName) {
+            $stmt = $pdo->prepare("INSERT INTO tb_collection_comments (collection_id, author_name, body) VALUES (?, ?, ?)");
+            $stmt->execute([$collectionIdPost, $authorName, $comment]);
+        }
+    }
+}
+
 // Get collection ID from query string
 $collectionId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($collectionId <= 0) {
@@ -48,6 +60,11 @@ foreach ($collectionTracks as $track) {
 $trackCount = count($collectionTracks);
 $coverImage = !empty($collection['cover_path']) ? $collection['cover_path'] : $placeholderCover;
 $trackItemsJson = htmlspecialchars(json_encode($trackItems), ENT_QUOTES, 'UTF-8');
+
+$collectionComments = [];
+$commentsStmt = $pdo->prepare("SELECT * FROM tb_collection_comments WHERE collection_id = ? ORDER BY created_at ASC");
+$commentsStmt->execute([$collectionId]);
+$collectionComments = $commentsStmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <section class="tb-section">
@@ -99,5 +116,26 @@ $trackItemsJson = htmlspecialchars(json_encode($trackItems), ENT_QUOTES, 'UTF-8'
         <?php else: ?>
             <p class="tb-empty">No tracks yet.</p>
         <?php endif; ?>
+    </div>
+
+    <div class="tb-feed-comments tb-collection-comments">
+        <h2>Comments</h2>
+        <?php if (empty($collectionComments)): ?>
+            <p class="tb-muted">No comments yet.</p>
+        <?php else: ?>
+            <ul>
+                <?php foreach ($collectionComments as $comment): ?>
+                    <li>
+                        <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Member'); ?>:</strong>
+                        <?php echo nl2br(htmlspecialchars($comment['body'])); ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+        <form method="post" class="tb-feed-comment-form">
+            <input type="hidden" name="collection_id" value="<?php echo (int) $collectionId; ?>">
+            <textarea name="comment_body" rows="3" required placeholder="Write a comment..."></textarea>
+            <button type="submit" name="add_collection_comment" class="tb-btn-secondary">Post Comment</button>
+        </form>
     </div>
 </section>
