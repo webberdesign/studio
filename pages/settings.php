@@ -42,13 +42,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $showSpotify  = !empty($settings['show_spotify']);
     $showApple    = !empty($settings['show_apple']);
     // Optional: redirect to avoid resubmission
-    header('Location: ?page=settings');
-    exit;
+    if (!headers_sent()) {
+        header('Location: ?page=settings');
+        exit;
+    }
+    $saveMessage = 'Settings saved.';
 }
 ?>
 <section class="tb-section">
     <h1 class="tb-title">Settings</h1>
     <p class="tb-subtitle">Customize your experience</p>
+    <?php if (!empty($saveMessage)): ?>
+        <div class="tb-alert"><?php echo htmlspecialchars($saveMessage); ?></div>
+    <?php endif; ?>
 
     <form method="post" class="tb-settings-form">
         <div class="tb-form-group">
