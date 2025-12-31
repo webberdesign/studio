@@ -4,6 +4,9 @@
 ------------------------------------------------------------*/
 require_once __DIR__ . '/../user_helpers.php';
 
+$currentUser = tb_get_current_user($pdo);
+$canCreateCollection = $currentUser || tb_is_admin();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_song_comment']) && !empty($_POST['song_id'])) {
         $songId = (int) $_POST['song_id'];
@@ -12,6 +15,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($comment !== '' && $authorName) {
             $stmt = $pdo->prepare("INSERT INTO tb_song_comments (song_id, author_name, body) VALUES (?, ?, ?)");
             $stmt->execute([$songId, $authorName, $comment]);
+        }
+    }
+
+    if (isset($_POST['add_collection_comment']) && !empty($_POST['collection_id'])) {
+        $collectionId = (int) $_POST['collection_id'];
+        $comment = trim($_POST['comment_body'] ?? '');
+        $authorName = tb_get_comment_author($pdo);
+        if ($comment !== '' && $authorName) {
+            $stmt = $pdo->prepare("INSERT INTO tb_collection_comments (collection_id, author_name, body) VALUES (?, ?, ?)");
+            $stmt->execute([$collectionId, $authorName, $comment]);
+        }
+    }
+
+    if (isset($_POST['add_collection_public']) && $canCreateCollection) {
+        $collectionName = trim($_POST['collection_name'] ?? '');
+        $collectionCover = trim($_POST['collection_cover'] ?? '');
+        if ($collectionName !== '') {
+            $stmt = $pdo->prepare("INSERT INTO tb_collections (name, cover_path) VALUES (?, ?)");
+            $stmt->execute([$collectionName, $collectionCover !== '' ? $collectionCover : null]);
         }
     }
 }
@@ -95,6 +117,17 @@ $releasedTrackCount = count($releasedSongs);
 // Fetch collections for display on the music page
 $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
                 ->fetchAll(PDO::FETCH_ASSOC);
+
+$collectionCommentThreads = [];
+if (!empty($collections)) {
+    $collectionIds = array_map('intval', array_column($collections, 'id'));
+    $placeholders = implode(',', array_fill(0, count($collectionIds), '?'));
+    $commentsStmt = $pdo->prepare("SELECT * FROM tb_collection_comments WHERE collection_id IN ($placeholders) ORDER BY created_at ASC");
+    $commentsStmt->execute($collectionIds);
+    foreach ($commentsStmt->fetchAll(PDO::FETCH_ASSOC) as $comment) {
+        $collectionCommentThreads[$comment['collection_id']][] = $comment;
+    }
+}
 ?>
 <section class="tb-section">
     <h1 class="tb-title">Music</h1>
@@ -171,24 +204,48 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
     <!-- Collections -->
     <div id="tbSongsCollections" class="tb-songs-pane">
         <?php if (!empty($collections)): ?>
-            <div class="tb-card-grid" style="margin-bottom:1rem;">
+            <div class="tb-card-grid tb-collection-grid" style="margin-bottom:1rem;">
                 <?php foreach ($collections as $c): ?>
                     <?php
                     $cover = !empty($c['cover_path']) ? $c['cover_path'] : $placeholderCover;
                     $coverClass = !empty($c['cover_path']) ? '' : ' is-placeholder';
                     ?>
-                    <a href="?page=collection&amp;id=<?php echo $c['id']; ?>" class="tb-card" style="text-decoration:none;">
-                        <img src="<?php echo htmlspecialchars($cover); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="tb-card-thumb tb-collection-cover<?php echo $coverClass; ?>">
+                    <div class="tb-card tb-collection-card">
+                        <a href="?page=collection&amp;id=<?php echo $c['id']; ?>" class="tb-collection-link">
+                            <img src="<?php echo htmlspecialchars($cover); ?>" alt="<?php echo htmlspecialchars($c['name']); ?>" class="tb-card-thumb tb-collection-cover<?php echo $coverClass; ?>">
+                        </a>
                         <div class="tb-card-body">
-                            <h3 class="tb-card-title" style="font-size:0.95rem; margin:0; color:inherit;">
-                                <?php echo htmlspecialchars($c['name']); ?>
-                            </h3>
+                            <div class="tb-card-header">
+                                <a href="?page=collection&amp;id=<?php echo $c['id']; ?>" class="tb-card-title-link">
+                                    <?php echo htmlspecialchars($c['name']); ?>
+                                </a>
+                                <button type="button" class="tb-collection-comment-trigger" data-collection-db-id="<?php echo (int) $c['id']; ?>" data-collection-title="<?php echo htmlspecialchars($c['name']); ?>" aria-label="Open comments for <?php echo htmlspecialchars($c['name']); ?>">
+                                    <i class="fas fa-comment"></i>
+                                </button>
+                            </div>
                         </div>
-                    </a>
+                    </div>
                 <?php endforeach; ?>
             </div>
         <?php else: ?>
             <p class="tb-empty">No collections yet.</p>
+        <?php endif; ?>
+        <?php if ($canCreateCollection): ?>
+            <form method="post" class="tb-form-inline tb-collection-create">
+                <div class="tb-collection-create-header">
+                    <h3>Create a collection</h3>
+                    <p>Add a title and optional cover URL to start grouping tracks.</p>
+                </div>
+                <label>
+                    Collection name
+                    <input type="text" name="collection_name" required placeholder="New collection name">
+                </label>
+                <label>
+                    Cover image URL (optional)
+                    <input type="url" name="collection_cover" placeholder="https://...">
+                </label>
+                <button type="submit" name="add_collection_public" class="tb-btn-secondary">Create collection</button>
+            </form>
         <?php endif; ?>
     </div>
 
@@ -226,6 +283,44 @@ $collections = $pdo->query("SELECT * FROM tb_collections ORDER BY name ASC")
                 <input type="hidden" name="song_id" value="">
                 <textarea name="comment_body" rows="2" required placeholder="Write a comment..."></textarea>
                 <button type="submit" name="add_song_comment" class="tb-btn-secondary">Post Comment</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="collectionCommentModal" class="tb-video-modal tb-song-comment-modal">
+        <div class="tb-modal-content tb-song-comment-content">
+            <button class="tb-modal-close" type="button">&times;</button>
+            <div class="tb-song-comment-header">
+                <h3 id="collectionCommentTitle">Comments</h3>
+            </div>
+            <div class="tb-feed-comments">
+                <h4>Comments</h4>
+                <?php if (empty($collections)): ?>
+                    <p class="tb-muted">No comments yet.</p>
+                <?php else: ?>
+                    <?php foreach ($collections as $collection): ?>
+                        <?php $comments = $collectionCommentThreads[$collection['id']] ?? []; ?>
+                        <div class="tb-collection-comment-thread" data-collection-id="<?php echo (int) $collection['id']; ?>" hidden>
+                            <?php if (empty($comments)): ?>
+                                <p class="tb-muted">No comments yet.</p>
+                            <?php else: ?>
+                                <ul>
+                                    <?php foreach ($comments as $comment): ?>
+                                        <li>
+                                            <strong><?php echo htmlspecialchars($comment['author_name'] ?: 'Member'); ?>:</strong>
+                                            <?php echo nl2br(htmlspecialchars($comment['body'])); ?>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+            <form method="post" class="tb-feed-comment-form">
+                <input type="hidden" name="collection_id" value="">
+                <textarea name="comment_body" rows="2" required placeholder="Write a comment..."></textarea>
+                <button type="submit" name="add_collection_comment" class="tb-btn-secondary">Post Comment</button>
             </form>
         </div>
     </div>

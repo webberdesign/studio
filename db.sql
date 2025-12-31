@@ -119,6 +119,18 @@ CREATE TABLE tb_song_comments (
 );
 
 /*
+ * Collection comments for collection discussions.
+ */
+CREATE TABLE tb_collection_comments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  collection_id INT NOT NULL,
+  author_name VARCHAR(100) DEFAULT NULL,
+  body TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (collection_id) REFERENCES tb_collections(id) ON DELETE CASCADE
+);
+
+/*
  * App open logs.
  */
 CREATE TABLE tb_app_opens (
