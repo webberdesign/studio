@@ -243,6 +243,23 @@ if (!empty($collections)) {
         <?php else: ?>
             <p class="tb-empty">No collections yet.</p>
         <?php endif; ?>
+        <?php if ($canCreateCollection): ?>
+            <form method="post" class="tb-form-inline tb-collection-create">
+                <div class="tb-collection-create-header">
+                    <h3>Create a collection</h3>
+                    <p>Add a title and optional cover URL to start grouping tracks.</p>
+                </div>
+                <label>
+                    Collection name
+                    <input type="text" name="collection_name" required placeholder="New collection name">
+                </label>
+                <label>
+                    Cover image URL (optional)
+                    <input type="url" name="collection_cover" placeholder="https://...">
+                </label>
+                <button type="submit" name="add_collection_public" class="tb-btn-secondary">Create collection</button>
+            </form>
+        <?php endif; ?>
     </div>
 
     <div id="songCommentModal" class="tb-video-modal tb-song-comment-modal">
