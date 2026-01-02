@@ -83,10 +83,20 @@ const initShellControls = () => {
 const initPushNotifications = () => {
   if (window.tbPushInitialized) return;
   window.tbPushInitialized = true;
-  if (!window.tbOneSignalAppId || typeof window.OneSignal === 'undefined') return;
+  if (!window.tbOneSignalAppId) {
+    console.warn('[push] Missing OneSignal App ID.');
+    return;
+  }
+  if (typeof window.OneSignal === 'undefined') {
+    console.warn('[push] OneSignal SDK not loaded yet.');
+    return;
+  }
 
   const deviceToken = localStorage.getItem('tb_device_token');
-  if (!deviceToken) return;
+  if (!deviceToken) {
+    console.warn('[push] Missing device token in localStorage.');
+    return;
+  }
 
   const resolveSubscriptionId = async () => {
     const subscription = window.OneSignal?.User?.PushSubscription;
@@ -102,13 +112,22 @@ const initPushNotifications = () => {
   };
 
   const registerSubscription = async () => {
-    if (document.body.classList.contains('tb-body--locked')) return;
+    if (document.body.classList.contains('tb-body--locked')) {
+      console.info('[push] App is locked; skipping subscription registration.');
+      return;
+    }
     const subscriptionId = await resolveSubscriptionId();
-    if (!subscriptionId) return;
+    if (!subscriptionId) {
+      console.info('[push] No OneSignal subscription ID available yet.');
+      return;
+    }
     const cached = localStorage.getItem('tb_onesignal_id');
-    if (cached === subscriptionId) return;
+    if (cached === subscriptionId) {
+      console.info('[push] Subscription already registered.');
+      return;
+    }
 
-    await fetch('user_session.php', {
+    const response = await fetch('user_session.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
@@ -118,27 +137,38 @@ const initPushNotifications = () => {
         onesignal_id: subscriptionId,
       }),
     });
+    if (!response.ok) {
+      console.warn('[push] register_push request failed.', response.status);
+      return;
+    }
     localStorage.setItem('tb_onesignal_id', subscriptionId);
+    console.info('[push] Subscription registered:', subscriptionId);
   };
   window.tbRegisterPushSubscription = registerSubscription;
 
   const initOneSignal = async () => {
     try {
+      console.info('[push] Initializing OneSignal.');
       await window.OneSignal.init({
         appId: window.tbOneSignalAppId,
         serviceWorkerPath: '/sw.js',
         serviceWorkerUpdaterPath: '/sw.js',
       });
     } catch (error) {
+      console.error('[push] OneSignal init failed.', error);
       return;
     }
 
     window.OneSignal.User.PushSubscription.addEventListener('change', () => {
+      console.info('[push] Subscription change detected.');
       registerSubscription();
     });
     window.addEventListener('tb:user-unlocked', () => {
       if (window.OneSignal.Notifications?.permission === 'default') {
-        window.OneSignal.Notifications.requestPermission().catch(() => {});
+        console.info('[push] Requesting notification permission after unlock.');
+        window.OneSignal.Notifications.requestPermission().catch((error) => {
+          console.warn('[push] Permission request failed.', error);
+        });
       }
       registerSubscription();
     });
@@ -186,6 +216,7 @@ const initPushSettingsPanel = (root = document) => {
   const refreshStatus = async () => {
     if (!window.OneSignal) {
       setStatus('Unavailable', false);
+      console.warn('[push] OneSignal SDK not available for settings panel.');
       return;
     }
     const permission = window.OneSignal.Notifications?.permission;
@@ -208,11 +239,13 @@ const initPushSettingsPanel = (root = document) => {
     enableBtn.addEventListener('click', async () => {
       if (!window.OneSignal?.Notifications?.requestPermission) return;
       try {
+        console.info('[push] Manual enable clicked. Requesting permission.');
         await window.OneSignal.Notifications.requestPermission();
         if (typeof window.tbRegisterPushSubscription === 'function') {
           await window.tbRegisterPushSubscription();
         }
       } catch (error) {
+        console.warn('[push] Manual permission request failed.', error);
         // noop
       }
       refreshStatus();
@@ -223,8 +256,10 @@ const initPushSettingsPanel = (root = document) => {
     disableBtn.addEventListener('click', async () => {
       if (!window.OneSignal?.User?.PushSubscription?.optOut) return;
       try {
+        console.info('[push] Manual disable clicked. Opting out.');
         await window.OneSignal.User.PushSubscription.optOut();
       } catch (error) {
+        console.warn('[push] Manual opt-out failed.', error);
         // noop
       }
       refreshStatus();
