@@ -120,6 +120,7 @@ const initPushNotifications = () => {
     });
     localStorage.setItem('tb_onesignal_id', subscriptionId);
   };
+  window.tbRegisterPushSubscription = registerSubscription;
 
   const initOneSignal = async () => {
     try {
@@ -136,12 +137,101 @@ const initPushNotifications = () => {
       registerSubscription();
     });
     window.addEventListener('tb:user-unlocked', () => {
+      if (window.OneSignal.Notifications?.permission === 'default') {
+        window.OneSignal.Notifications.requestPermission().catch(() => {});
+      }
       registerSubscription();
     });
     registerSubscription();
   };
 
   initOneSignal();
+};
+
+const initPushSettingsPanel = (root = document) => {
+  const scope = root.querySelector ? root : document;
+  const panel = scope.querySelector('[data-push-settings]');
+  if (!panel) return;
+
+  const statusEl = panel.querySelector('[data-push-status]');
+  const enableBtn = panel.querySelector('[data-push-enable]');
+  const disableBtn = panel.querySelector('[data-push-disable]');
+
+  const setStatus = (text, isEnabled) => {
+    if (statusEl) {
+      statusEl.textContent = text;
+      statusEl.classList.toggle('is-active', !!isEnabled);
+    }
+    if (enableBtn) {
+      enableBtn.disabled = !!isEnabled;
+    }
+    if (disableBtn) {
+      disableBtn.disabled = !isEnabled;
+    }
+  };
+
+  const getSubscriptionId = async () => {
+    const subscription = window.OneSignal?.User?.PushSubscription;
+    if (!subscription) return null;
+    const idValue = subscription.id;
+    if (typeof idValue === 'function') {
+      return idValue();
+    }
+    if (idValue && typeof idValue.then === 'function') {
+      return await idValue;
+    }
+    return idValue || null;
+  };
+
+  const refreshStatus = async () => {
+    if (!window.OneSignal) {
+      setStatus('Unavailable', false);
+      return;
+    }
+    const permission = window.OneSignal.Notifications?.permission;
+    if (permission === 'denied') {
+      setStatus('Blocked in browser settings', false);
+      return;
+    }
+    const subscriptionId = await getSubscriptionId();
+    const isEnabled = !!subscriptionId;
+    if (isEnabled) {
+      setStatus('Enabled', true);
+    } else if (permission === 'default') {
+      setStatus('Not enabled', false);
+    } else {
+      setStatus('Not subscribed', false);
+    }
+  };
+
+  if (enableBtn) {
+    enableBtn.addEventListener('click', async () => {
+      if (!window.OneSignal?.Notifications?.requestPermission) return;
+      try {
+        await window.OneSignal.Notifications.requestPermission();
+        if (typeof window.tbRegisterPushSubscription === 'function') {
+          await window.tbRegisterPushSubscription();
+        }
+      } catch (error) {
+        // noop
+      }
+      refreshStatus();
+    });
+  }
+
+  if (disableBtn) {
+    disableBtn.addEventListener('click', async () => {
+      if (!window.OneSignal?.User?.PushSubscription?.optOut) return;
+      try {
+        await window.OneSignal.User.PushSubscription.optOut();
+      } catch (error) {
+        // noop
+      }
+      refreshStatus();
+    });
+  }
+
+  refreshStatus();
 };
 
 const initLockScreen = () => {
@@ -306,6 +396,7 @@ const initLockScreen = () => {
 
 const initPageInteractions = (root = document) => {
   const scope = root.querySelector ? root : document;
+  initPushSettingsPanel(scope);
   // Analytics toggle
   const toggle = scope.querySelector('#tbAnalyticsToggle');
   const ytPane = scope.querySelector('#tbAnalyticsYT');

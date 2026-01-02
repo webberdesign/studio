@@ -1703,6 +1703,26 @@ body.tb-body {
 .tb-btn-secondary i {
   font-size: 1rem;
 }
+.tb-settings-card {
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--tb-border);
+  background: var(--tb-bg-elevated);
+}
+.tb-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.2);
+  color: var(--tb-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.tb-status-pill.is-active {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--tb-highlight);
+}
 .tb-back-link {
   margin-bottom: 0.75rem;
   align-self: flex-start;
