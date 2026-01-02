@@ -4,6 +4,7 @@
 ------------------------------------------------------------*/
 require_once __DIR__ . '/../feed_helpers.php';
 require_once __DIR__ . '/../user_helpers.php';
+require_once __DIR__ . '/../onesignal_helpers.php';
 
 $feedMessage = null;
 
@@ -43,9 +44,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $postId     = (int) $_POST['post_id'];
         $comment    = trim($_POST['comment_body'] ?? '');
         $authorName = tb_get_comment_author($pdo);
+        $authorUserId = tb_get_comment_author_id($pdo);
         if ($comment !== '' && $authorName) {
-            $stmt = $pdo->prepare("INSERT INTO tb_feed_comments (post_id, author_name, body) VALUES (?, ?, ?)");
-            $stmt->execute([$postId, $authorName, $comment]);
+            $stmt = $pdo->prepare("INSERT INTO tb_feed_comments (post_id, author_name, author_user_id, body) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$postId, $authorName, $authorUserId, $comment]);
+            tb_notify_comment($pdo, 'the feed', $authorName, $authorUserId, '/?page=feed');
         }
     }
 }

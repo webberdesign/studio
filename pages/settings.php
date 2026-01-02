@@ -79,6 +79,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <button type="submit" class="tb-btn-primary">Save Settings</button>
     </form>
 
+    <div class="tb-settings-card" data-push-settings style="margin-top:1.5rem;">
+        <h2 class="tb-title" style="font-size:1.25rem;">Notifications</h2>
+        <p class="tb-subtitle">Manage browser push notifications for comments and new unreleased videos.</p>
+        <div class="tb-form-group">
+            <span class="tb-status-pill" data-push-status>Checking…</span>
+        </div>
+        <div class="tb-form-group">
+            <button type="button" class="tb-btn-secondary" data-push-enable>Enable notifications</button>
+            <button type="button" class="tb-btn-secondary" data-push-disable style="margin-left:0.75rem;" disabled>Disable notifications</button>
+        </div>
+    </div>
+
     <div class="tb-settings-links" style="margin-top:1.5rem;">
         <a href="admin.php" class="tb-btn-secondary"><i class="fas fa-lock"></i> Admin Login</a>
     </div>

@@ -80,6 +80,195 @@ const initShellControls = () => {
   }
 };
 
+const initPushNotifications = () => {
+  if (window.tbPushInitialized) return;
+  window.tbPushInitialized = true;
+  if (!window.tbOneSignalAppId) {
+    console.warn('[push] Missing OneSignal App ID.');
+    return;
+  }
+  if (typeof window.OneSignal === 'undefined') {
+    console.warn('[push] OneSignal SDK not loaded yet.');
+    return;
+  }
+
+  const deviceToken = localStorage.getItem('tb_device_token');
+  if (!deviceToken) {
+    console.warn('[push] Missing device token in localStorage.');
+    return;
+  }
+
+  const resolveSubscriptionId = async () => {
+    const subscription = window.OneSignal?.User?.PushSubscription;
+    if (!subscription) return null;
+    const idValue = subscription.id;
+    if (typeof idValue === 'function') {
+      return idValue();
+    }
+    if (idValue && typeof idValue.then === 'function') {
+      return await idValue;
+    }
+    return idValue || null;
+  };
+
+  const registerSubscription = async () => {
+    if (document.body.classList.contains('tb-body--locked')) {
+      console.info('[push] App is locked; skipping subscription registration.');
+      return;
+    }
+    const subscriptionId = await resolveSubscriptionId();
+    if (!subscriptionId) {
+      console.info('[push] No OneSignal subscription ID available yet.');
+      return;
+    }
+    const cached = localStorage.getItem('tb_onesignal_id');
+    if (cached === subscriptionId) {
+      console.info('[push] Subscription already registered.');
+      return;
+    }
+
+    const response = await fetch('user_session.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        action: 'register_push',
+        device_token: deviceToken,
+        onesignal_id: subscriptionId,
+      }),
+    });
+    if (!response.ok) {
+      console.warn('[push] register_push request failed.', response.status);
+      return;
+    }
+    localStorage.setItem('tb_onesignal_id', subscriptionId);
+    console.info('[push] Subscription registered:', subscriptionId);
+  };
+  window.tbRegisterPushSubscription = registerSubscription;
+
+  const initOneSignal = async () => {
+    try {
+      console.info('[push] Initializing OneSignal.');
+      await window.OneSignal.init({
+        appId: window.tbOneSignalAppId,
+        serviceWorkerPath: '/sw.js',
+        serviceWorkerUpdaterPath: '/sw.js',
+      });
+    } catch (error) {
+      console.error('[push] OneSignal init failed.', error);
+      return;
+    }
+
+    window.OneSignal.User.PushSubscription.addEventListener('change', () => {
+      console.info('[push] Subscription change detected.');
+      registerSubscription();
+    });
+    window.addEventListener('tb:user-unlocked', () => {
+      if (window.OneSignal.Notifications?.permission === 'default') {
+        console.info('[push] Requesting notification permission after unlock.');
+        window.OneSignal.Notifications.requestPermission().catch((error) => {
+          console.warn('[push] Permission request failed.', error);
+        });
+      }
+      registerSubscription();
+    });
+    registerSubscription();
+  };
+
+  initOneSignal();
+};
+
+const initPushSettingsPanel = (root = document) => {
+  const scope = root.querySelector ? root : document;
+  const panel = scope.querySelector('[data-push-settings]');
+  if (!panel) return;
+
+  const statusEl = panel.querySelector('[data-push-status]');
+  const enableBtn = panel.querySelector('[data-push-enable]');
+  const disableBtn = panel.querySelector('[data-push-disable]');
+
+  const setStatus = (text, isEnabled) => {
+    if (statusEl) {
+      statusEl.textContent = text;
+      statusEl.classList.toggle('is-active', !!isEnabled);
+    }
+    if (enableBtn) {
+      enableBtn.disabled = !!isEnabled;
+    }
+    if (disableBtn) {
+      disableBtn.disabled = !isEnabled;
+    }
+  };
+
+  const getSubscriptionId = async () => {
+    const subscription = window.OneSignal?.User?.PushSubscription;
+    if (!subscription) return null;
+    const idValue = subscription.id;
+    if (typeof idValue === 'function') {
+      return idValue();
+    }
+    if (idValue && typeof idValue.then === 'function') {
+      return await idValue;
+    }
+    return idValue || null;
+  };
+
+  const refreshStatus = async () => {
+    if (!window.OneSignal) {
+      setStatus('Unavailable', false);
+      console.warn('[push] OneSignal SDK not available for settings panel.');
+      return;
+    }
+    const permission = window.OneSignal.Notifications?.permission;
+    if (permission === 'denied') {
+      setStatus('Blocked in browser settings', false);
+      return;
+    }
+    const subscriptionId = await getSubscriptionId();
+    const isEnabled = !!subscriptionId;
+    if (isEnabled) {
+      setStatus('Enabled', true);
+    } else if (permission === 'default') {
+      setStatus('Not enabled', false);
+    } else {
+      setStatus('Not subscribed', false);
+    }
+  };
+
+  if (enableBtn) {
+    enableBtn.addEventListener('click', async () => {
+      if (!window.OneSignal?.Notifications?.requestPermission) return;
+      try {
+        console.info('[push] Manual enable clicked. Requesting permission.');
+        await window.OneSignal.Notifications.requestPermission();
+        if (typeof window.tbRegisterPushSubscription === 'function') {
+          await window.tbRegisterPushSubscription();
+        }
+      } catch (error) {
+        console.warn('[push] Manual permission request failed.', error);
+        // noop
+      }
+      refreshStatus();
+    });
+  }
+
+  if (disableBtn) {
+    disableBtn.addEventListener('click', async () => {
+      if (!window.OneSignal?.User?.PushSubscription?.optOut) return;
+      try {
+        console.info('[push] Manual disable clicked. Opting out.');
+        await window.OneSignal.User.PushSubscription.optOut();
+      } catch (error) {
+        console.warn('[push] Manual opt-out failed.', error);
+        // noop
+      }
+      refreshStatus();
+    });
+  }
+
+  refreshStatus();
+};
+
 const initLockScreen = () => {
   const lockScreen = document.getElementById('tbLockScreen');
   if (!lockScreen) return;
@@ -141,6 +330,7 @@ const initLockScreen = () => {
       if (data && data.success) {
         setLockedState(false);
         updateHeaderProfile(data.user);
+        window.dispatchEvent(new Event('tb:user-unlocked'));
         if (errorText) {
           errorText.textContent = '';
         }
@@ -186,6 +376,7 @@ const initLockScreen = () => {
       if (data && data.success) {
         setLockedState(false);
         updateHeaderProfile(data.user);
+        window.dispatchEvent(new Event('tb:user-unlocked'));
         if (errorText) {
           errorText.textContent = '';
         }
@@ -240,6 +431,7 @@ const initLockScreen = () => {
 
 const initPageInteractions = (root = document) => {
   const scope = root.querySelector ? root : document;
+  initPushSettingsPanel(scope);
   // Analytics toggle
   const toggle = scope.querySelector('#tbAnalyticsToggle');
   const ytPane = scope.querySelector('#tbAnalyticsYT');
@@ -757,6 +949,7 @@ const initAjaxNavigation = () => {
 document.addEventListener('DOMContentLoaded', () => {
   initShellControls();
   initLockScreen();
+  initPushNotifications();
   initPageInteractions(document);
   initAjaxNavigation();
 });

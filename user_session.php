@@ -55,6 +55,35 @@ if ($action === 'validate') {
     tb_json_response(['success' => true, 'user' => $user]);
 }
 
+if ($action === 'register_push') {
+    $oneSignalId = trim((string)($payload['onesignal_id'] ?? $_POST['onesignal_id'] ?? ''));
+    if ($oneSignalId === '') {
+        tb_json_response(['success' => false, 'message' => 'Missing OneSignal ID.'], 400);
+    }
+
+    $stmt = $pdo->prepare(
+        "SELECT u.id
+         FROM tb_user_devices d
+         JOIN tb_users u ON u.id = d.user_id
+         WHERE d.device_token = ?
+         LIMIT 1"
+    );
+    $stmt->execute([$deviceToken]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$user) {
+        tb_json_response(['success' => false, 'message' => 'Device not registered.'], 404);
+    }
+
+    $insertStmt = $pdo->prepare(
+        "INSERT INTO tb_user_push_subscriptions (user_id, onesignal_id, created_at, updated_at)
+         VALUES (?, ?, NOW(), NOW())
+         ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), updated_at = NOW()"
+    );
+    $insertStmt->execute([(int)$user['id'], $oneSignalId]);
+
+    tb_json_response(['success' => true]);
+}
+
 if ($action === 'unlock') {
     $pin = preg_replace('/\D+/', '', (string)($payload['pin'] ?? $_POST['pin'] ?? ''));
     if (strlen($pin) !== 6) {

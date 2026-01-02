@@ -35,8 +35,13 @@ define('YOUTUBE_CLIENT_SECRET', 'your-youtube-oauth-client-secret-here');
 define('YOUTUBE_REFRESH_TOKEN', 'your-youtube-oauth-refresh-token-here');
 define('YOUTUBE_OAUTH_REDIRECT_URI', 'https://your-domain.com/analytics/oauth2callback.php');
 
-function tb_is_admin() {
-    return !empty($_SESSION['tb_admin']);
+define('ONESIGNAL_APP_ID', 'your-onesignal-app-id-here');
+define('ONESIGNAL_REST_API_KEY', 'your-onesignal-rest-api-key-here');
+
+if (!function_exists('tb_is_admin')) {
+    function tb_is_admin() {
+        return !empty($_SESSION['tb_admin']);
+    }
 }
 
 /**
