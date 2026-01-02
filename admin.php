@@ -5,6 +5,7 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/feed_helpers.php';
 require_once __DIR__ . '/user_helpers.php';
+require_once __DIR__ . '/onesignal_helpers.php';
 
 // Determine which tab is selected
 $tab = $_GET['tab'] ?? 'videos';
@@ -132,6 +133,9 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
             $pos = tb_next_position($pdo, 'tb_videos');
             $stmt = $pdo->prepare("INSERT INTO tb_videos (title, youtube_url, is_released, position) VALUES (?, ?, ?, ?)");
             $stmt->execute([$title, $url, $released, $pos]);
+            if (!$released) {
+                tb_notify_unreleased_video($pdo, $title);
+            }
         }
     }
     // Delete video
