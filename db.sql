@@ -31,6 +31,15 @@ CREATE TABLE tb_user_devices (
   FOREIGN KEY (user_id) REFERENCES tb_users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE tb_user_push_subscriptions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  onesignal_id VARCHAR(64) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES tb_users(id) ON DELETE CASCADE
+);
+
 CREATE TABLE tb_videos (
   id INT AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
@@ -89,9 +98,11 @@ CREATE TABLE tb_feed_comments (
   id INT AUTO_INCREMENT PRIMARY KEY,
   post_id INT NOT NULL,
   author_name VARCHAR(100) DEFAULT NULL,
+  author_user_id INT DEFAULT NULL,
   body TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (post_id) REFERENCES tb_feed_posts(id) ON DELETE CASCADE
+  FOREIGN KEY (post_id) REFERENCES tb_feed_posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (author_user_id) REFERENCES tb_users(id) ON DELETE SET NULL
 );
 
 /*
@@ -101,9 +112,11 @@ CREATE TABLE tb_video_comments (
   id INT AUTO_INCREMENT PRIMARY KEY,
   video_id INT NOT NULL,
   author_name VARCHAR(100) DEFAULT NULL,
+  author_user_id INT DEFAULT NULL,
   body TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (video_id) REFERENCES tb_videos(id) ON DELETE CASCADE
+  FOREIGN KEY (video_id) REFERENCES tb_videos(id) ON DELETE CASCADE,
+  FOREIGN KEY (author_user_id) REFERENCES tb_users(id) ON DELETE SET NULL
 );
 
 /*
@@ -113,9 +126,11 @@ CREATE TABLE tb_song_comments (
   id INT AUTO_INCREMENT PRIMARY KEY,
   song_id INT NOT NULL,
   author_name VARCHAR(100) DEFAULT NULL,
+  author_user_id INT DEFAULT NULL,
   body TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (song_id) REFERENCES tb_songs(id) ON DELETE CASCADE
+  FOREIGN KEY (song_id) REFERENCES tb_songs(id) ON DELETE CASCADE,
+  FOREIGN KEY (author_user_id) REFERENCES tb_users(id) ON DELETE SET NULL
 );
 
 /*
@@ -125,9 +140,11 @@ CREATE TABLE tb_collection_comments (
   id INT AUTO_INCREMENT PRIMARY KEY,
   collection_id INT NOT NULL,
   author_name VARCHAR(100) DEFAULT NULL,
+  author_user_id INT DEFAULT NULL,
   body TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (collection_id) REFERENCES tb_collections(id) ON DELETE CASCADE
+  FOREIGN KEY (collection_id) REFERENCES tb_collections(id) ON DELETE CASCADE,
+  FOREIGN KEY (author_user_id) REFERENCES tb_users(id) ON DELETE SET NULL
 );
 
 /*

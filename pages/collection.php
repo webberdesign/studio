@@ -5,15 +5,22 @@
 
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../user_helpers.php';
+require_once __DIR__ . '/../onesignal_helpers.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_collection_comment']) && !empty($_POST['collection_id'])) {
         $collectionIdPost = (int) $_POST['collection_id'];
         $comment = trim($_POST['comment_body'] ?? '');
         $authorName = tb_get_comment_author($pdo);
+        $authorUserId = tb_get_comment_author_id($pdo);
         if ($comment !== '' && $authorName) {
-            $stmt = $pdo->prepare("INSERT INTO tb_collection_comments (collection_id, author_name, body) VALUES (?, ?, ?)");
-            $stmt->execute([$collectionIdPost, $authorName, $comment]);
+            $stmt = $pdo->prepare("INSERT INTO tb_collection_comments (collection_id, author_name, author_user_id, body) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$collectionIdPost, $authorName, $authorUserId, $comment]);
+            $titleStmt = $pdo->prepare("SELECT name FROM tb_collections WHERE id = ? LIMIT 1");
+            $titleStmt->execute([$collectionIdPost]);
+            $collectionRow = $titleStmt->fetch(PDO::FETCH_ASSOC);
+            $context = $collectionRow && !empty($collectionRow['name']) ? $collectionRow['name'] : 'a collection';
+            tb_notify_comment($pdo, $context, $authorName, $authorUserId, '/?page=collection&id=' . $collectionIdPost);
         }
     }
 }
