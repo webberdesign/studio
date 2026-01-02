@@ -290,13 +290,24 @@ const initLockScreen = () => {
   const getDeviceToken = () => {
     let token = localStorage.getItem('tb_device_token');
     if (!token) {
+      const cookieToken = document.cookie
+        .split(';')
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .map((part) => part.split('='))
+        .find(([key]) => key === 'tb_device_token');
+      if (cookieToken && cookieToken[1]) {
+        token = decodeURIComponent(cookieToken[1]);
+      }
+    }
+    if (!token) {
       if (window.crypto && typeof window.crypto.randomUUID === 'function') {
         token = window.crypto.randomUUID();
       } else {
         token = `tb_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
       }
-      localStorage.setItem('tb_device_token', token);
     }
+    localStorage.setItem('tb_device_token', token);
     return token;
   };
 
