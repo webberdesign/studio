@@ -123,7 +123,11 @@ const initPushNotifications = () => {
 
   const initOneSignal = async () => {
     try {
-      await window.OneSignal.init({ appId: window.tbOneSignalAppId });
+      await window.OneSignal.init({
+        appId: window.tbOneSignalAppId,
+        serviceWorkerPath: '/sw.js',
+        serviceWorkerUpdaterPath: '/sw.js',
+      });
     } catch (error) {
       return;
     }
