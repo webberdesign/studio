@@ -89,6 +89,14 @@ const initPushNotifications = () => {
   }
   if (typeof window.OneSignal === 'undefined') {
     console.warn('[push] OneSignal SDK not loaded yet.');
+    window.tbPushInitialized = false;
+    if (!window.tbPushInitRetries) {
+      window.tbPushInitRetries = 0;
+    }
+    if (window.tbPushInitRetries < 10) {
+      window.tbPushInitRetries += 1;
+      setTimeout(initPushNotifications, 500);
+    }
     return;
   }
 
