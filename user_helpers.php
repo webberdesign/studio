@@ -55,6 +55,19 @@ if (!function_exists('tb_get_comment_author')) {
     }
 }
 
+if (!function_exists('tb_get_comment_author_id')) {
+    function tb_get_comment_author_id(PDO $pdo): ?int {
+        if (tb_is_admin()) {
+            return null;
+        }
+        $user = tb_get_current_user($pdo);
+        if ($user && !empty($user['id'])) {
+            return (int)$user['id'];
+        }
+        return null;
+    }
+}
+
 if (!function_exists('tb_get_effective_settings')) {
     function tb_get_effective_settings(PDO $pdo, ?array $user = null): array {
         $settings = tb_get_settings();

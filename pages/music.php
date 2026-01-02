@@ -3,6 +3,7 @@
     SECTION: Music Library (Public)
 ------------------------------------------------------------*/
 require_once __DIR__ . '/../user_helpers.php';
+require_once __DIR__ . '/../onesignal_helpers.php';
 
 $currentUser = tb_get_current_user($pdo);
 $canCreateCollection = $currentUser || tb_is_admin();
@@ -12,9 +13,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $songId = (int) $_POST['song_id'];
         $comment = trim($_POST['comment_body'] ?? '');
         $authorName = tb_get_comment_author($pdo);
+        $authorUserId = tb_get_comment_author_id($pdo);
         if ($comment !== '' && $authorName) {
-            $stmt = $pdo->prepare("INSERT INTO tb_song_comments (song_id, author_name, body) VALUES (?, ?, ?)");
-            $stmt->execute([$songId, $authorName, $comment]);
+            $stmt = $pdo->prepare("INSERT INTO tb_song_comments (song_id, author_name, author_user_id, body) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$songId, $authorName, $authorUserId, $comment]);
+            $titleStmt = $pdo->prepare("SELECT title FROM tb_songs WHERE id = ? LIMIT 1");
+            $titleStmt->execute([$songId]);
+            $song = $titleStmt->fetch(PDO::FETCH_ASSOC);
+            $context = $song && !empty($song['title']) ? $song['title'] : 'a track';
+            tb_notify_comment($pdo, $context, $authorName, $authorUserId, '/?page=music');
         }
     }
 
@@ -22,9 +29,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $collectionId = (int) $_POST['collection_id'];
         $comment = trim($_POST['comment_body'] ?? '');
         $authorName = tb_get_comment_author($pdo);
+        $authorUserId = tb_get_comment_author_id($pdo);
         if ($comment !== '' && $authorName) {
-            $stmt = $pdo->prepare("INSERT INTO tb_collection_comments (collection_id, author_name, body) VALUES (?, ?, ?)");
-            $stmt->execute([$collectionId, $authorName, $comment]);
+            $stmt = $pdo->prepare("INSERT INTO tb_collection_comments (collection_id, author_name, author_user_id, body) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$collectionId, $authorName, $authorUserId, $comment]);
+            $titleStmt = $pdo->prepare("SELECT name FROM tb_collections WHERE id = ? LIMIT 1");
+            $titleStmt->execute([$collectionId]);
+            $collection = $titleStmt->fetch(PDO::FETCH_ASSOC);
+            $context = $collection && !empty($collection['name']) ? $collection['name'] : 'a collection';
+            tb_notify_comment($pdo, $context, $authorName, $authorUserId, '/?page=music');
         }
     }
 

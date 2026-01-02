@@ -12,6 +12,7 @@ $currentTheme = $settings['theme'];
 $adminName = tb_get_admin_display_name($pdo);
 $displayName = $adminName ?: ($currentUser['name'] ?? 'Member');
 $displayIcon = !empty($currentUser['icon_path']) ? $currentUser['icon_path'] : 'assets/icons/icon-152.png';
+$oneSignalAppId = defined('ONESIGNAL_APP_ID') ? ONESIGNAL_APP_ID : '';
 
 // Determine which page is being requested
 // Default to the videos page.  Valid pages include our top‑level pages and
@@ -131,6 +132,12 @@ if ($isAjax) {
     <!-- SECTION: Fonts / Icons / CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="public/css/app.css">
+
+    <!-- SECTION: OneSignal -->
+    <script>
+      window.tbOneSignalAppId = <?php echo json_encode($oneSignalAppId); ?>;
+    </script>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
     <!-- SECTION: Ping Script -->
     <script>
@@ -315,7 +322,7 @@ if ($isAjax) {
     </div>
 </div>
 
-<script src="public/js/app.js"></script>
-<script src="public/js/track_player.js"></script>
+<script src="public/js/app.js" defer></script>
+<script src="public/js/track_player.js" defer></script>
 </body>
 </html>
