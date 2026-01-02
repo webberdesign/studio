@@ -3,6 +3,7 @@
     SECTION: Videos Library (Public)
 ------------------------------------------------------------*/
 require_once __DIR__ . '/../user_helpers.php';
+require_once __DIR__ . '/../onesignal_helpers.php';
 
 /**
  * Converts a YouTube URL into a thumbnail URL (mqdefault).
@@ -20,9 +21,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $videoId = (int) $_POST['video_id'];
         $comment = trim($_POST['comment_body'] ?? '');
         $authorName = tb_get_comment_author($pdo);
+        $authorUserId = tb_get_comment_author_id($pdo);
         if ($comment !== '' && $authorName) {
-            $stmt = $pdo->prepare("INSERT INTO tb_video_comments (video_id, author_name, body) VALUES (?, ?, ?)");
-            $stmt->execute([$videoId, $authorName, $comment]);
+            $stmt = $pdo->prepare("INSERT INTO tb_video_comments (video_id, author_name, author_user_id, body) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$videoId, $authorName, $authorUserId, $comment]);
+            $titleStmt = $pdo->prepare("SELECT title FROM tb_videos WHERE id = ? LIMIT 1");
+            $titleStmt->execute([$videoId]);
+            $video = $titleStmt->fetch(PDO::FETCH_ASSOC);
+            $context = $video && !empty($video['title']) ? $video['title'] : 'a video';
+            tb_notify_comment($pdo, $context, $authorName, $authorUserId, '/?page=videos');
         }
     }
 }
