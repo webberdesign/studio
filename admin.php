@@ -367,13 +367,34 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
     <?php else: ?>
         <main class="tb-admin-main">
             <div class="tb-toggle-pill tb-admin-tabs">
-                <a href="?tab=videos" class="<?php echo ($tab === 'videos') ? 'active' : ''; ?>">Videos</a>
-                <a href="?tab=songs" class="<?php echo ($tab === 'songs') ? 'active' : ''; ?>">Music</a>
-                <a href="?tab=collections" class="<?php echo ($tab === 'collections') ? 'active' : ''; ?>">Collections</a>
-                <a href="?tab=feed" class="<?php echo ($tab === 'feed') ? 'active' : ''; ?>">Feed</a>
-                <a href="?tab=users" class="<?php echo ($tab === 'users') ? 'active' : ''; ?>">Users</a>
-                <a href="?tab=app" class="<?php echo ($tab === 'app') ? 'active' : ''; ?>">App</a>
-                <a href="?tab=settings" class="<?php echo ($tab === 'settings') ? 'active' : ''; ?>">Settings</a>
+                <a href="?tab=videos" class="<?php echo ($tab === 'videos') ? 'active' : ''; ?>">
+                    <span class="tb-admin-tab-icon"><i class="fas fa-video"></i></span>
+                    <span class="tb-admin-tab-label">Videos</span>
+                </a>
+                <a href="?tab=songs" class="<?php echo ($tab === 'songs') ? 'active' : ''; ?>">
+                    <span class="tb-admin-tab-icon"><i class="fas fa-music"></i></span>
+                    <span class="tb-admin-tab-label">Music</span>
+                </a>
+                <a href="?tab=collections" class="<?php echo ($tab === 'collections') ? 'active' : ''; ?>">
+                    <span class="tb-admin-tab-icon"><i class="fas fa-layer-group"></i></span>
+                    <span class="tb-admin-tab-label">Collections</span>
+                </a>
+                <a href="?tab=feed" class="<?php echo ($tab === 'feed') ? 'active' : ''; ?>">
+                    <span class="tb-admin-tab-icon"><i class="fas fa-rss"></i></span>
+                    <span class="tb-admin-tab-label">Feed</span>
+                </a>
+                <a href="?tab=users" class="<?php echo ($tab === 'users') ? 'active' : ''; ?>">
+                    <span class="tb-admin-tab-icon"><i class="fas fa-users"></i></span>
+                    <span class="tb-admin-tab-label">Users</span>
+                </a>
+                <a href="?tab=app" class="<?php echo ($tab === 'app') ? 'active' : ''; ?>">
+                    <span class="tb-admin-tab-icon"><i class="fas fa-mobile-screen-button"></i></span>
+                    <span class="tb-admin-tab-label">App</span>
+                </a>
+                <a href="?tab=settings" class="<?php echo ($tab === 'settings') ? 'active' : ''; ?>">
+                    <span class="tb-admin-tab-icon"><i class="fas fa-gear"></i></span>
+                    <span class="tb-admin-tab-label">Settings</span>
+                </a>
             </div>
 
             <?php if ($tab === 'videos'): ?>

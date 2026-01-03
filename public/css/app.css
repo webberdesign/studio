@@ -1098,21 +1098,43 @@ body.tb-body {
   margin-bottom: 1rem;
 }
 
+.tb-admin-tabs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.tb-admin-tab-icon {
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tb-admin-tab-label {
+  font-weight: 600;
+}
+
 @media (max-width: 640px) {
   .tb-admin-tabs {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
-    gap: 0.4rem;
-    padding: 0.35rem;
+    gap: 0.5rem;
+    padding: 0.6rem;
     box-sizing: border-box;
   }
 
   .tb-admin-tabs a {
-    flex: 1 1 calc(50% - 0.4rem);
+    flex-direction: column;
     text-align: center;
-    padding: 0.35rem 0.5rem;
-    font-size: 0.75rem;
+    padding: 0.55rem 0.45rem;
+    font-size: 0.7rem;
+    border-radius: 0.9rem;
+    min-height: 64px;
+  }
+
+  .tb-admin-tab-icon {
+    font-size: 1rem;
   }
 }
 
