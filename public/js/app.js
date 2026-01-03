@@ -489,14 +489,6 @@ const initLockScreen = () => {
 const initPageInteractions = (root = document) => {
   const scope = root.querySelector ? root : document;
   initPushSettingsPanel(scope);
-  const themeToggle = scope.querySelector('[data-theme-toggle]');
-  if (themeToggle) {
-    themeToggle.addEventListener('change', () => {
-      const theme = themeToggle.checked ? 'light' : 'dark';
-      const appliedTheme = applyTheme(theme);
-      updateThemePreference(appliedTheme);
-    });
-  }
   // Analytics toggle
   const toggle = scope.querySelector('#tbAnalyticsToggle');
   const ytPane = scope.querySelector('#tbAnalyticsYT');

@@ -85,42 +85,6 @@ if ($action === 'register_push') {
     tb_json_response(['success' => true]);
 }
 
-if ($action === 'update_settings') {
-    $postedTheme = $payload['theme'] ?? $_POST['theme'] ?? '';
-    $theme = $postedTheme === 'light' ? 'light' : ($postedTheme === 'dark' ? 'dark' : null);
-    $updates = [];
-    if ($theme !== null) {
-        $updates['theme'] = $theme;
-    }
-    if (array_key_exists('show_spotify', $payload) || array_key_exists('show_spotify', $_POST)) {
-        $updates['show_spotify'] = !empty($payload['show_spotify'] ?? $_POST['show_spotify']);
-    }
-    if (array_key_exists('show_apple', $payload) || array_key_exists('show_apple', $_POST)) {
-        $updates['show_apple'] = !empty($payload['show_apple'] ?? $_POST['show_apple']);
-    }
-    if (empty($updates)) {
-        tb_json_response(['success' => false, 'message' => 'No settings provided.'], 400);
-    }
-
-    $userStmt = $pdo->prepare(
-        "SELECT u.id
-         FROM tb_user_devices d
-         JOIN tb_users u ON u.id = d.user_id
-         WHERE d.device_token = ?
-         LIMIT 1"
-    );
-    $userStmt->execute([$deviceToken]);
-    $user = $userStmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($user) {
-        tb_update_user_settings($pdo, (int)$user['id'], $updates);
-    } else {
-        tb_set_settings($updates);
-    }
-
-    tb_json_response(['success' => true]);
-}
-
 if ($action === 'unlock') {
     $pin = preg_replace('/\D+/', '', (string)($payload['pin'] ?? $_POST['pin'] ?? ''));
     if (strlen($pin) !== 6) {
