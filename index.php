@@ -159,6 +159,9 @@ if ($isAjax) {
     </script>
 </head>
 <body class="tb-body <?php echo ($currentTheme === 'light') ? 'tb-theme-light' : ''; ?>">
+<div id="tbAppSplash" class="tb-app-splash" aria-hidden="false">
+    <img src="assets/icons/icon-192.png" alt="Titty Bingo Studio" class="tb-app-splash-icon">
+</div>
 <div class="tb-lock-screen" id="tbLockScreen" data-auth-endpoint="user_session.php" aria-hidden="true">
     <div class="tb-lock-card">
         <div class="tb-lock-title">Welcome to Titty Bingo Studio</div>

@@ -1003,7 +1003,23 @@ const initAjaxNavigation = () => {
   });
 };
 
+const initAppSplash = () => {
+  const splash = document.getElementById('tbAppSplash');
+  if (!splash) return;
+
+  const startExit = () => {
+    splash.classList.add('is-exiting');
+    splash.setAttribute('aria-hidden', 'true');
+    window.setTimeout(() => {
+      splash.remove();
+    }, 700);
+  };
+
+  window.setTimeout(startExit, 2000);
+};
+
 document.addEventListener('DOMContentLoaded', () => {
+  initAppSplash();
   initShellControls();
   initLockScreen();
   initPushNotifications();
