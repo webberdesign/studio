@@ -1098,6 +1098,24 @@ body.tb-body {
   margin-bottom: 1rem;
 }
 
+@media (max-width: 640px) {
+  .tb-admin-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 0.4rem;
+    padding: 0.35rem;
+    box-sizing: border-box;
+  }
+
+  .tb-admin-tabs a {
+    flex: 1 1 calc(50% - 0.4rem);
+    text-align: center;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
 .tb-admin-section {
   background: var(--tb-bg-elevated);
   border-radius: var(--tb-radius-xl);
