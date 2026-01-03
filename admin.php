@@ -366,35 +366,41 @@ if (tb_is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST['logi
         </main>
     <?php else: ?>
         <main class="tb-admin-main">
-            <div class="tb-toggle-pill tb-admin-tabs">
-                <a href="?tab=videos" class="<?php echo ($tab === 'videos') ? 'active' : ''; ?>">
-                    <span class="tb-admin-tab-icon"><i class="fas fa-video"></i></span>
-                    <span class="tb-admin-tab-label">Videos</span>
-                </a>
-                <a href="?tab=songs" class="<?php echo ($tab === 'songs') ? 'active' : ''; ?>">
-                    <span class="tb-admin-tab-icon"><i class="fas fa-music"></i></span>
-                    <span class="tb-admin-tab-label">Music</span>
-                </a>
-                <a href="?tab=collections" class="<?php echo ($tab === 'collections') ? 'active' : ''; ?>">
-                    <span class="tb-admin-tab-icon"><i class="fas fa-layer-group"></i></span>
-                    <span class="tb-admin-tab-label">Collections</span>
-                </a>
-                <a href="?tab=feed" class="<?php echo ($tab === 'feed') ? 'active' : ''; ?>">
-                    <span class="tb-admin-tab-icon"><i class="fas fa-rss"></i></span>
-                    <span class="tb-admin-tab-label">Feed</span>
-                </a>
-                <a href="?tab=users" class="<?php echo ($tab === 'users') ? 'active' : ''; ?>">
-                    <span class="tb-admin-tab-icon"><i class="fas fa-users"></i></span>
-                    <span class="tb-admin-tab-label">Users</span>
-                </a>
-                <a href="?tab=app" class="<?php echo ($tab === 'app') ? 'active' : ''; ?>">
-                    <span class="tb-admin-tab-icon"><i class="fas fa-mobile-screen-button"></i></span>
-                    <span class="tb-admin-tab-label">App</span>
-                </a>
-                <a href="?tab=settings" class="<?php echo ($tab === 'settings') ? 'active' : ''; ?>">
-                    <span class="tb-admin-tab-icon"><i class="fas fa-gear"></i></span>
-                    <span class="tb-admin-tab-label">Settings</span>
-                </a>
+            <div class="tb-admin-tabs">
+                <button class="tb-admin-tabs-toggle" type="button" aria-expanded="false" aria-controls="tb-admin-tabs-menu">
+                    <i class="fas fa-table-cells"></i>
+                    <span>Admin menu</span>
+                </button>
+                <div class="tb-toggle-pill tb-admin-tabs-menu" id="tb-admin-tabs-menu">
+                    <a href="?tab=videos" class="<?php echo ($tab === 'videos') ? 'active' : ''; ?>">
+                        <span class="tb-admin-tab-icon"><i class="fas fa-video"></i></span>
+                        <span class="tb-admin-tab-label">Videos</span>
+                    </a>
+                    <a href="?tab=songs" class="<?php echo ($tab === 'songs') ? 'active' : ''; ?>">
+                        <span class="tb-admin-tab-icon"><i class="fas fa-music"></i></span>
+                        <span class="tb-admin-tab-label">Music</span>
+                    </a>
+                    <a href="?tab=collections" class="<?php echo ($tab === 'collections') ? 'active' : ''; ?>">
+                        <span class="tb-admin-tab-icon"><i class="fas fa-layer-group"></i></span>
+                        <span class="tb-admin-tab-label">Collections</span>
+                    </a>
+                    <a href="?tab=feed" class="<?php echo ($tab === 'feed') ? 'active' : ''; ?>">
+                        <span class="tb-admin-tab-icon"><i class="fas fa-rss"></i></span>
+                        <span class="tb-admin-tab-label">Feed</span>
+                    </a>
+                    <a href="?tab=users" class="<?php echo ($tab === 'users') ? 'active' : ''; ?>">
+                        <span class="tb-admin-tab-icon"><i class="fas fa-users"></i></span>
+                        <span class="tb-admin-tab-label">Users</span>
+                    </a>
+                    <a href="?tab=app" class="<?php echo ($tab === 'app') ? 'active' : ''; ?>">
+                        <span class="tb-admin-tab-icon"><i class="fas fa-mobile-screen-button"></i></span>
+                        <span class="tb-admin-tab-label">App</span>
+                    </a>
+                    <a href="?tab=settings" class="<?php echo ($tab === 'settings') ? 'active' : ''; ?>">
+                        <span class="tb-admin-tab-icon"><i class="fas fa-gear"></i></span>
+                        <span class="tb-admin-tab-label">Settings</span>
+                    </a>
+                </div>
             </div>
 
             <?php if ($tab === 'videos'): ?>
@@ -1037,6 +1043,36 @@ window.addEventListener('load', function() {
         cancelBtn.style.display = 'none';
       });
     }
+  })();
+
+  (function() {
+    const tabs = document.querySelector('.tb-admin-tabs');
+    if (!tabs) return;
+    const toggle = tabs.querySelector('.tb-admin-tabs-toggle');
+    const menu = tabs.querySelector('.tb-admin-tabs-menu');
+    if (!toggle || !menu) return;
+
+    const closeMenu = () => {
+      tabs.classList.remove('is-open');
+      toggle.setAttribute('aria-expanded', 'false');
+    };
+
+    toggle.addEventListener('click', () => {
+      const isOpen = tabs.classList.toggle('is-open');
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!tabs.contains(event.target)) {
+        closeMenu();
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeMenu();
+      }
+    });
   })();
 </script>
 </body>
