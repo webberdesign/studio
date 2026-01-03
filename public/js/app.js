@@ -2,6 +2,57 @@
     SECTION: Shell Interactions
 ------------------------------------------------------------*/
 
+const getThemeColor = (theme) => (theme === 'light' ? '#ffffff' : '#0f172a');
+
+const applyTheme = (theme, { persist = true } = {}) => {
+  const resolvedTheme = theme === 'light' ? 'light' : 'dark';
+  const isLight = resolvedTheme === 'light';
+  document.body.classList.toggle('tb-theme-light', isLight);
+  if (persist) {
+    localStorage.setItem('tb_theme', resolvedTheme);
+  }
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) {
+    themeMeta.setAttribute('content', getThemeColor(resolvedTheme));
+  }
+  return resolvedTheme;
+};
+
+const getStoredTheme = () => {
+  const savedTheme = localStorage.getItem('tb_theme');
+  if (savedTheme === 'light' || savedTheme === 'dark') {
+    return savedTheme;
+  }
+  return document.body.classList.contains('tb-theme-light') ? 'light' : 'dark';
+};
+
+const updateThemePreference = async (theme) => {
+  const deviceToken = localStorage.getItem('tb_device_token');
+  if (!deviceToken) return;
+  try {
+    const response = await fetch('user_session.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        action: 'update_settings',
+        device_token: deviceToken,
+        theme,
+      }),
+    });
+    if (!response.ok) {
+      console.warn('[theme] Failed to update preference.', response.status);
+      return;
+    }
+    const data = await response.json();
+    if (!data || !data.success) {
+      console.warn('[theme] Preference update rejected.');
+    }
+  } catch (error) {
+    console.warn('[theme] Preference update failed.', error);
+  }
+};
+
 const initShellControls = () => {
   if (window.tbShellInitialized) return;
   window.tbShellInitialized = true;
@@ -36,41 +87,28 @@ const initShellControls = () => {
   // Theme toggle
   const themeToggleBtn = document.getElementById('tbThemeToggleBtn');
   if (themeToggleBtn) {
-    // initialise theme: default to light when none stored
-    let savedTheme = localStorage.getItem('tb_theme');
-    if (!savedTheme) {
-      // no saved theme: set to light
-      savedTheme = 'light';
-      localStorage.setItem('tb_theme', savedTheme);
-    }
-    const isLight = savedTheme === 'light';
-    if (isLight) {
-      document.body.classList.add('tb-theme-light');
-      themeToggleBtn.classList.add('active');
+    const savedTheme = applyTheme(getStoredTheme());
+    const setToggleState = (theme) => {
+      const isLight = theme === 'light';
+      themeToggleBtn.classList.toggle('active', isLight);
       const icon = themeToggleBtn.querySelector('i');
-      if (icon) {
-        // show moon icon in light mode to indicate switch to dark
+      if (!icon) return;
+      if (isLight) {
+        // show moon icon when in light mode
         icon.classList.remove('fa-sun');
         icon.classList.add('fa-moon');
+      } else {
+        // show sun icon when in dark mode
+        icon.classList.remove('fa-moon');
+        icon.classList.add('fa-sun');
       }
-    }
+    };
+    setToggleState(savedTheme);
     themeToggleBtn.addEventListener('click', () => {
-      const currentlyLight = document.body.classList.toggle('tb-theme-light');
-      // update local storage
-      localStorage.setItem('tb_theme', currentlyLight ? 'light' : 'dark');
-      themeToggleBtn.classList.toggle('active', currentlyLight);
-      const icon = themeToggleBtn.querySelector('i');
-      if (icon) {
-        if (currentlyLight) {
-          // show moon icon when in light mode
-          icon.classList.remove('fa-sun');
-          icon.classList.add('fa-moon');
-        } else {
-          // show sun icon when in dark mode
-          icon.classList.remove('fa-moon');
-          icon.classList.add('fa-sun');
-        }
-      }
+      const newTheme = document.body.classList.contains('tb-theme-light') ? 'dark' : 'light';
+      const appliedTheme = applyTheme(newTheme);
+      setToggleState(appliedTheme);
+      updateThemePreference(appliedTheme);
     });
   }
 
@@ -451,6 +489,14 @@ const initLockScreen = () => {
 const initPageInteractions = (root = document) => {
   const scope = root.querySelector ? root : document;
   initPushSettingsPanel(scope);
+  const themeToggle = scope.querySelector('[data-theme-toggle]');
+  if (themeToggle) {
+    themeToggle.addEventListener('change', () => {
+      const theme = themeToggle.checked ? 'light' : 'dark';
+      const appliedTheme = applyTheme(theme);
+      updateThemePreference(appliedTheme);
+    });
+  }
   // Analytics toggle
   const toggle = scope.querySelector('#tbAnalyticsToggle');
   const ytPane = scope.querySelector('#tbAnalyticsYT');
