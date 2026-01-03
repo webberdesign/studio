@@ -1135,6 +1135,22 @@ body.tb-body {
   font-weight: 600;
 }
 
+.tb-admin-tabs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.tb-admin-tab-icon {
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tb-admin-tab-label {
+  font-weight: 600;
+}
+
 @media (max-width: 640px) {
   .tb-admin-tabs {
     margin-bottom: 1.25rem;
