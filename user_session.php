@@ -85,6 +85,27 @@ if ($action === 'register_push') {
     tb_json_response(['success' => true]);
 }
 
+if ($action === 'update_settings') {
+    $theme = $payload['theme'] ?? $_POST['theme'] ?? '';
+    $resolvedTheme = ($theme === 'light') ? 'light' : 'dark';
+    $stmt = $pdo->prepare(
+        "SELECT u.id
+         FROM tb_user_devices d
+         JOIN tb_users u ON u.id = d.user_id
+         WHERE d.device_token = ?
+         LIMIT 1"
+    );
+    $stmt->execute([$deviceToken]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$user) {
+        tb_json_response(['success' => false, 'message' => 'Device not registered.'], 404);
+    }
+    tb_update_user_settings($pdo, (int)$user['id'], [
+        'theme' => $resolvedTheme,
+    ]);
+    tb_json_response(['success' => true, 'theme' => $resolvedTheme]);
+}
+
 if ($action === 'unlock') {
     $pin = preg_replace('/\D+/', '', (string)($payload['pin'] ?? $_POST['pin'] ?? ''));
     if (strlen($pin) !== 6) {

@@ -18,6 +18,24 @@ const applyTheme = (theme, { persist = true } = {}) => {
   return resolvedTheme;
 };
 
+const syncThemeToggleButton = (theme) => {
+  const themeToggleBtn = document.getElementById('tbThemeToggleBtn');
+  if (!themeToggleBtn) return;
+  const isLight = theme === 'light';
+  themeToggleBtn.classList.toggle('active', isLight);
+  const icon = themeToggleBtn.querySelector('i');
+  if (!icon) return;
+  if (isLight) {
+    // show moon icon when in light mode
+    icon.classList.remove('fa-sun');
+    icon.classList.add('fa-moon');
+  } else {
+    // show sun icon when in dark mode
+    icon.classList.remove('fa-moon');
+    icon.classList.add('fa-sun');
+  }
+};
+
 const getStoredTheme = () => {
   const savedTheme = localStorage.getItem('tb_theme');
   if (savedTheme === 'light' || savedTheme === 'dark') {
@@ -51,6 +69,58 @@ const updateThemePreference = async (theme) => {
   } catch (error) {
     console.warn('[theme] Preference update failed.', error);
   }
+};
+
+const lockPortraitOrientation = async () => {
+  if (!screen.orientation || typeof screen.orientation.lock !== 'function') return;
+  try {
+    await screen.orientation.lock('portrait');
+  } catch (error) {
+    console.warn('[orientation] Unable to lock orientation.', error);
+  }
+};
+
+const initSettingsForm = (root = document) => {
+  const scope = root.querySelector ? root : document;
+  const settingsForm = scope.querySelector('.tb-settings-form');
+  if (!settingsForm) return;
+  const themeToggle = settingsForm.querySelector('[data-theme-toggle]');
+  if (!themeToggle) return;
+
+  const submitSettings = async () => {
+    const formData = new FormData(settingsForm);
+    try {
+      const response = await fetch(settingsForm.action || window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json',
+        },
+        credentials: 'same-origin',
+      });
+      if (!response.ok) {
+        console.warn('[settings] Failed to save settings.', response.status);
+        return;
+      }
+      const data = await response.json();
+      if (!data || !data.success) {
+        console.warn('[settings] Save response rejected.');
+      }
+    } catch (error) {
+      console.warn('[settings] Save failed.', error);
+    }
+  };
+
+  themeToggle.addEventListener('change', () => {
+    const newTheme = themeToggle.checked ? 'light' : 'dark';
+    const appliedTheme = applyTheme(newTheme);
+    if (appliedTheme !== newTheme) {
+      themeToggle.checked = appliedTheme === 'light';
+    }
+    syncThemeToggleButton(appliedTheme);
+    submitSettings();
+  });
 };
 
 const initShellControls = () => {
@@ -88,26 +158,11 @@ const initShellControls = () => {
   const themeToggleBtn = document.getElementById('tbThemeToggleBtn');
   if (themeToggleBtn) {
     const savedTheme = applyTheme(getStoredTheme());
-    const setToggleState = (theme) => {
-      const isLight = theme === 'light';
-      themeToggleBtn.classList.toggle('active', isLight);
-      const icon = themeToggleBtn.querySelector('i');
-      if (!icon) return;
-      if (isLight) {
-        // show moon icon when in light mode
-        icon.classList.remove('fa-sun');
-        icon.classList.add('fa-moon');
-      } else {
-        // show sun icon when in dark mode
-        icon.classList.remove('fa-moon');
-        icon.classList.add('fa-sun');
-      }
-    };
-    setToggleState(savedTheme);
+    syncThemeToggleButton(savedTheme);
     themeToggleBtn.addEventListener('click', () => {
       const newTheme = document.body.classList.contains('tb-theme-light') ? 'dark' : 'light';
       const appliedTheme = applyTheme(newTheme);
-      setToggleState(appliedTheme);
+      syncThemeToggleButton(appliedTheme);
       updateThemePreference(appliedTheme);
     });
   }
@@ -489,6 +544,7 @@ const initLockScreen = () => {
 const initPageInteractions = (root = document) => {
   const scope = root.querySelector ? root : document;
   initPushSettingsPanel(scope);
+  initSettingsForm(scope);
   // Analytics toggle
   const toggle = scope.querySelector('#tbAnalyticsToggle');
   const ytPane = scope.querySelector('#tbAnalyticsYT');
@@ -1021,6 +1077,7 @@ const initAppSplash = () => {
 document.addEventListener('DOMContentLoaded', () => {
   initAppSplash();
   initShellControls();
+  lockPortraitOrientation();
   initLockScreen();
   initPushNotifications();
   initPageInteractions(document);
