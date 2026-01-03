@@ -1015,7 +1015,7 @@ const initAppSplash = () => {
     }, 700);
   };
 
-  window.setTimeout(startExit, 2000);
+  window.setTimeout(startExit, 1500);
 };
 
 document.addEventListener('DOMContentLoaded', () => {

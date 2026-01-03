@@ -1811,6 +1811,7 @@ body.tb-body {
 .tb-app-splash-icon {
   width: 120px;
   height: 120px;
+  border-radius: 24px;
   filter: drop-shadow(0 18px 35px rgba(15, 23, 42, 0.25));
 }
 
