@@ -14,6 +14,8 @@ $settings     = tb_get_effective_settings($pdo, $currentUser);
 $currentTheme = $settings['theme'];
 $showSpotify  = !empty($settings['show_spotify']);
 $showApple    = !empty($settings['show_apple']);
+$isAjaxRequest = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest'
+    || stripos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Determine new theme based on whether the checkbox is checked.  In
@@ -41,6 +43,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $currentTheme = $settings['theme'];
     $showSpotify  = !empty($settings['show_spotify']);
     $showApple    = !empty($settings['show_apple']);
+    if ($isAjaxRequest) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'theme' => $currentTheme,
+            'show_spotify' => $showSpotify,
+            'show_apple' => $showApple,
+        ]);
+        exit;
+    }
     // Optional: redirect to avoid resubmission
     if (!headers_sent()) {
         header('Location: ?page=settings');
