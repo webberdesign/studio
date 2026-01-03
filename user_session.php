@@ -104,13 +104,6 @@ if ($action === 'unlock') {
         tb_json_response(['success' => false, 'message' => 'This device is already linked to another account.'], 409);
     }
 
-    $userDeviceStmt = $pdo->prepare("SELECT id FROM tb_user_devices WHERE user_id = ? LIMIT 1");
-    $userDeviceStmt->execute([$user['id']]);
-    $existingDevice = $userDeviceStmt->fetch(PDO::FETCH_ASSOC);
-    if ($existingDevice && !$deviceOwner) {
-        tb_json_response(['success' => false, 'message' => 'This invite code has already been used.'], 409);
-    }
-
     if (!$deviceOwner) {
         $insertStmt = $pdo->prepare("INSERT INTO tb_user_devices (user_id, device_token) VALUES (?, ?)");
         $insertStmt->execute([$user['id'], $deviceToken]);
