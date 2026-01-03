@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="tb-form-group">
             <!-- Theme toggle switch -->
             <label class="tb-switch">
-                <input type="checkbox" name="theme" value="light" <?php echo ($currentTheme === 'light' ? 'checked' : ''); ?> />
+                <input type="checkbox" name="theme" value="light" data-theme-toggle <?php echo ($currentTheme === 'light' ? 'checked' : ''); ?> />
                 <span class="tb-slider"></span>
                 <span class="tb-switch-label">Light Mode</span>
             </label>
