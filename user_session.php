@@ -3,6 +3,7 @@
     SECTION: User Device Unlock
 ------------------------------------------------------------*/
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/user_helpers.php';
 
 header('Content-Type: application/json');
 
@@ -102,13 +103,6 @@ if ($action === 'unlock') {
     $deviceOwner = $deviceStmt->fetch(PDO::FETCH_ASSOC);
     if ($deviceOwner && (int)$deviceOwner['user_id'] !== (int)$user['id']) {
         tb_json_response(['success' => false, 'message' => 'This device is already linked to another account.'], 409);
-    }
-
-    $userDeviceStmt = $pdo->prepare("SELECT id FROM tb_user_devices WHERE user_id = ? LIMIT 1");
-    $userDeviceStmt->execute([$user['id']]);
-    $existingDevice = $userDeviceStmt->fetch(PDO::FETCH_ASSOC);
-    if ($existingDevice && !$deviceOwner) {
-        tb_json_response(['success' => false, 'message' => 'This invite code has already been used.'], 409);
     }
 
     if (!$deviceOwner) {

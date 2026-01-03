@@ -322,7 +322,7 @@ if ($isAjax) {
     </div>
 </div>
 
-<script src="public/js/app.js"></script>
-<script src="public/js/track_player.js"></script>
+<script src="public/js/app.js" defer></script>
+<script src="public/js/track_player.js" defer></script>
 </body>
 </html>

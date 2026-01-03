@@ -4,6 +4,7 @@
   "start_url": "/app/studio/index.php",
   "scope": "/app/studio/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#020617",
   "theme_color": "#0f172a",
   "icons": [
