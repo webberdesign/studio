@@ -217,17 +217,28 @@ if (!empty($collections)) {
     <!-- Collections -->
     <div id="tbSongsCollections" class="tb-songs-pane">
         <?php if ($canCreateCollection): ?>
-            <form method="post" class="tb-form-inline tb-collection-create">
-                <label>
-                    Collection name
-                    <input type="text" name="collection_name" required placeholder="New collection name">
-                </label>
-                <label>
-                    Cover image URL (optional)
-                    <input type="url" name="collection_cover" placeholder="https://...">
-                </label>
-                <button type="submit" name="add_collection_public" class="tb-btn-secondary">Create collection</button>
-            </form>
+            <div class="tb-feed-form tb-collection-form">
+                <div class="tb-feed-form-header">
+                    <div class="tb-collection-create-header">
+                        <h3>Create a collection</h3>
+                        <p>Add a title and optional cover URL to start grouping tracks.</p>
+                    </div>
+                    <button type="button" class="tb-toggle-pill tb-feed-toggle" id="tbCollectionToggle">
+                        <span>New Collection</span>
+                    </button>
+                </div>
+                <form method="post" class="tb-form-inline tb-collection-create" id="tbCollectionCreateForm" hidden>
+                    <label>
+                        Collection name
+                        <input type="text" name="collection_name" required placeholder="New collection name">
+                    </label>
+                    <label>
+                        Cover image URL (optional)
+                        <input type="url" name="collection_cover" placeholder="https://...">
+                    </label>
+                    <button type="submit" name="add_collection_public" class="tb-btn-secondary">Create collection</button>
+                </form>
+            </div>
         <?php endif; ?>
         <?php if (!empty($collections)): ?>
             <div class="tb-card-grid tb-collection-grid" style="margin-bottom:1rem;">
@@ -255,23 +266,6 @@ if (!empty($collections)) {
             </div>
         <?php else: ?>
             <p class="tb-empty">No collections yet.</p>
-        <?php endif; ?>
-        <?php if ($canCreateCollection): ?>
-            <form method="post" class="tb-form-inline tb-collection-create">
-                <div class="tb-collection-create-header">
-                    <h3>Create a collection</h3>
-                    <p>Add a title and optional cover URL to start grouping tracks.</p>
-                </div>
-                <label>
-                    Collection name
-                    <input type="text" name="collection_name" required placeholder="New collection name">
-                </label>
-                <label>
-                    Cover image URL (optional)
-                    <input type="url" name="collection_cover" placeholder="https://...">
-                </label>
-                <button type="submit" name="add_collection_public" class="tb-btn-secondary">Create collection</button>
-            </form>
         <?php endif; ?>
     </div>
 
