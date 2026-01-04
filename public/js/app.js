@@ -882,6 +882,25 @@ const initPageInteractions = (root = document) => {
     });
   }
 
+  const collectionToggle = scope.querySelector('#tbCollectionToggle');
+  const collectionForm = scope.querySelector('#tbCollectionCreateForm');
+  if (collectionToggle && collectionForm) {
+    collectionToggle.addEventListener('click', () => {
+      const isHidden = collectionForm.hasAttribute('hidden');
+      if (isHidden) {
+        collectionForm.removeAttribute('hidden');
+        collectionToggle.classList.add('active');
+        const label = collectionToggle.querySelector('span');
+        if (label) label.textContent = 'Hide Form';
+      } else {
+        collectionForm.setAttribute('hidden', '');
+        collectionToggle.classList.remove('active');
+        const label = collectionToggle.querySelector('span');
+        if (label) label.textContent = 'New Collection';
+      }
+    });
+  }
+
   const modal = scope.querySelector('#tbFeedModal');
   const modalImg = scope.querySelector('#tbFeedModalImage');
   const modalClose = scope.querySelector('#tbFeedModalClose');

@@ -373,6 +373,13 @@ body.tb-body {
   gap: 0.8rem;
 }
 
+.tb-collection-form .tb-collection-create {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-top: 0.75rem;
+}
+
 .tb-collection-create button {
   justify-self: flex-start;
 }
